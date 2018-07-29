@@ -6,6 +6,9 @@ MySQL binary log parser.
 
 Work in progress, some events are not fully supported.
 
+A fork of [go-sql-driver/mysql](https://github.com/go-sql-driver/mysql) is used
+to provide underlying connection and basic packet exchange.
+
 *TODO:*
 
 [x] FormatDescriptionEvent
