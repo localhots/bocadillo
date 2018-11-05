@@ -1,4 +1,4 @@
-package blt
+package parser
 
 import (
 	"context"

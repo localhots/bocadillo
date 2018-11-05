@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/localhots/blt"
+	"github.com/localhots/blt/parser"
 	"github.com/localhots/gobelt/log"
 )
 
@@ -22,13 +22,13 @@ func main() {
 	validate((*dsn != ""), "Database source name is not set")
 	validate((*id != 0), "Server ID is not set")
 	validate((*file != ""), "Binary log file is not set")
-	conf := blt.Config{
+	conf := parser.Config{
 		ServerID: uint32(*id),
 		File:     *file,
 		Offset:   uint32(*offset),
 	}
 
-	reader, err := blt.Connect(*dsn, conf)
+	reader, err := parser.Connect(*dsn, conf)
 	if err != nil {
 		log.Fatalf(ctx, "Failed to establish connection: %v", err)
 	}

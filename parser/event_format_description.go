@@ -1,11 +1,9 @@
-package blt
+package parser
 
 import (
 	"fmt"
 	"strconv"
 	"strings"
-
-	"github.com/localhots/pretty"
 )
 
 // FormatDescription is a description of binary log format.
@@ -55,7 +53,6 @@ func decodeFormatDescription(data []byte) FormatDescription {
 		EventHeaderLength:      buf.readUint8(),
 		EventTypeHeaderLengths: buf.readStringEOF(),
 	}
-	pretty.Println(fd)
 	fd.ServerDetails = ServerDetails{
 		Flavor:            FlavorMySQL,
 		Version:           parseVersionNumber(fd.ServerVersion),
