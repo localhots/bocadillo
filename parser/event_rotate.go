@@ -1,4 +1,4 @@
-package blt
+package parser
 
 func (r *Reader) decodeRotateEvent(data []byte) Position {
 	buf := newReadBuffer(data)
