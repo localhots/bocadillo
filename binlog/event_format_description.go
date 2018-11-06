@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/localhots/blt/tools"
+	"github.com/localhots/bocadillo/tools"
 )
 
 // FormatDescription is a description of binary log format.

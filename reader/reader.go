@@ -2,8 +2,8 @@ package reader
 
 import (
 	"github.com/juju/errors"
-	"github.com/localhots/blt/binlog"
-	"github.com/localhots/blt/schema"
+	"github.com/localhots/bocadillo/binlog"
+	"github.com/localhots/bocadillo/schema"
 	"github.com/localhots/pretty"
 )
 

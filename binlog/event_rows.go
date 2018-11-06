@@ -1,8 +1,8 @@
 package binlog
 
 import (
-	"github.com/localhots/blt/mysql"
-	"github.com/localhots/blt/tools"
+	"github.com/localhots/bocadillo/mysql"
+	"github.com/localhots/bocadillo/tools"
 	"github.com/localhots/pretty"
 )
 
@@ -79,10 +79,8 @@ func (e *RowsEvent) decodeRows(buf *tools.Buffer, td TableDescription, bm []byte
 	count = (count + 7) / 8
 
 	nullBM := buf.ReadStringVarLen(count)
-	nullCnt := 0
+	nullIdx := 0
 	row := make([]interface{}, e.ColumnCount)
-
-	pretty.Println(count, nullBM)
 
 	var err error
 	for i := 0; i < int(e.ColumnCount); i++ {
@@ -90,8 +88,8 @@ func (e *RowsEvent) decodeRows(buf *tools.Buffer, td TableDescription, bm []byte
 			continue
 		}
 
-		isNull := (uint32(nullBM[nullCnt/8]) >> uint32(nullCnt%8)) & 0x01
-		nullCnt++
+		isNull := (uint32(nullBM[nullIdx/8]) >> uint32(nullIdx%8)) & 1
+		nullIdx++
 		if isNull > 0 {
 			row[i] = nil
 			continue
