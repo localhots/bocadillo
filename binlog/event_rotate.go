@@ -1,6 +1,6 @@
 package binlog
 
-import "github.com/localhots/blt/tools"
+import "github.com/localhots/bocadillo/tools"
 
 // Position ...
 type Position struct {

@@ -3,7 +3,7 @@ package binlog
 import (
 	"errors"
 
-	"github.com/localhots/blt/tools"
+	"github.com/localhots/bocadillo/tools"
 )
 
 var (

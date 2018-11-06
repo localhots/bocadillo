@@ -1,8 +1,8 @@
 package binlog
 
 import (
-	"github.com/localhots/blt/mysql"
-	"github.com/localhots/blt/tools"
+	"github.com/localhots/bocadillo/mysql"
+	"github.com/localhots/bocadillo/tools"
 )
 
 // TableDescription contains table details required to process rows events.

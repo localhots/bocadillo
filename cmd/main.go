@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/localhots/blt/reader"
+	"github.com/localhots/bocadillo/reader"
 	"github.com/localhots/gobelt/log"
 )
 
