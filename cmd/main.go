@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/localhots/blt/parser"
+	"github.com/localhots/blt/reader"
 	"github.com/localhots/gobelt/log"
 )
 
@@ -22,31 +22,36 @@ func main() {
 	validate((*dsn != ""), "Database source name is not set")
 	validate((*id != 0), "Server ID is not set")
 	validate((*file != ""), "Binary log file is not set")
-	conf := parser.Config{
+	conf := reader.Config{
 		ServerID: uint32(*id),
 		File:     *file,
 		Offset:   uint32(*offset),
 	}
 
-	reader, err := parser.Connect(*dsn, conf)
+	conn, err := reader.Connect(*dsn, conf)
 	if err != nil {
 		log.Fatalf(ctx, "Failed to establish connection: %v", err)
+	}
+
+	reader, err := reader.NewReader(conn)
+	if err != nil {
+		log.Fatalf(ctx, "Failed to create reader: %v", err)
 	}
 
 	off := conf.Offset
 	for i := 0; i < 100; i++ {
 		// for {
-		evt, err := reader.ReadEventHeader(ctx)
+		evt, err := reader.ReadEvent()
 		if err != nil {
 			log.Fatalf(ctx, "Failed to read event: %v", err)
 		}
-		ts := time.Unix(int64(evt.Timestamp), 0).Format(time.RFC3339)
+		ts := time.Unix(int64(evt.Header.Timestamp), 0).Format(time.RFC3339)
 		log.Info(ctx, "Event received", log.F{
-			"type":      evt.Type,
+			"type":      evt.Header.Type,
 			"timestamp": ts,
 			"offset":    off,
 		})
-		off = evt.NextOffset
+		off = evt.Header.NextOffset
 	}
 }
 

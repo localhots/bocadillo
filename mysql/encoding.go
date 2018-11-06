@@ -1,8 +1,7 @@
-package parser
+package mysql
 
 import (
 	"encoding/binary"
-	"fmt"
 )
 
 // Protocol::FixedLengthInteger
@@ -12,61 +11,75 @@ import (
 
 // int<1>
 
-func encodeUint8(data []byte, v uint8) {
+// EncodeUint8 encodes given uint8 value into a slice of bytes.
+func EncodeUint8(data []byte, v uint8) {
 	data[0] = v
 }
 
-func decodeUint8(data []byte) uint8 {
+// DecodeUint8 decodes a uint8 value from a given slice of bytes.
+func DecodeUint8(data []byte) uint8 {
 	return uint8(data[0])
 }
 
 // int<2>
 
-func encodeUint16(data []byte, v uint16) {
+// EncodeUint16 encodes given uint16 value into a slice of bytes.
+func EncodeUint16(data []byte, v uint16) {
 	binary.LittleEndian.PutUint16(data, v)
 }
 
-func decodeUint16(data []byte) uint16 {
+// DecodeUint16 decodes a uint16 value from a given slice of bytes.
+func DecodeUint16(data []byte) uint16 {
 	return binary.LittleEndian.Uint16(data)
 }
 
 // int<3>
 
-func encodeUint24(data []byte, v uint32) {
+// EncodeUint24 encodes given uint32 value as a 3-byte integer into a slice of
+// bytes.
+func EncodeUint24(data []byte, v uint32) {
 	encodeVarLen64(data, uint64(v), 3)
 }
 
-func decodeUint24(data []byte) uint32 {
+// DecodeUint24 decodes 3 bytes as uint32 value from a given slice of bytes.
+func DecodeUint24(data []byte) uint32 {
 	return uint32(decodeVarLen64(data, 3))
 }
 
 // int<4>
 
-func encodeUint32(data []byte, v uint32) {
+// EncodeUint32 encodes given uint32 value into a slice of bytes.
+func EncodeUint32(data []byte, v uint32) {
 	binary.LittleEndian.PutUint32(data, v)
 }
 
-func decodeUint32(data []byte) uint32 {
+// DecodeUint32 decodes a uint32 value from a given slice of bytes.
+func DecodeUint32(data []byte) uint32 {
 	return binary.LittleEndian.Uint32(data)
 }
 
 // int<6>
 
-func encodeUint48(data []byte, v uint64) {
+// EncodeUint48 encodes given uint64 value as a 6-byte integer into a slice of
+// bytes.
+func EncodeUint48(data []byte, v uint64) {
 	encodeVarLen64(data, v, 6)
 }
 
-func decodeUint48(data []byte) uint64 {
+// DecodeUint48 decodes 6 bytes as uint64 value from a given slice of bytes.
+func DecodeUint48(data []byte) uint64 {
 	return decodeVarLen64(data, 6)
 }
 
 // int<8>
 
-func encodeUint64(data []byte, v uint64) {
+// EncodeUint64 encodes given uint64 value into a slice of bytes.
+func EncodeUint64(data []byte, v uint64) {
 	binary.LittleEndian.PutUint64(data, v)
 }
 
-func decodeUint64(data []byte) uint64 {
+// DecodeUint64 decodes a uint64 value from a given slice of bytes.
+func DecodeUint64(data []byte) uint64 {
 	return binary.LittleEndian.Uint64(data)
 }
 
@@ -74,13 +87,16 @@ func decodeUint64(data []byte) uint64 {
 // An integer that consumes 1, 3, 4, or 9 bytes, depending on its numeric value.
 // Spec: https://dev.mysql.com/doc/internals/en/integer.html#length-encoded-integer
 
+// EncodeUintLenEnc writes a length-encoded integer into a given slice of bytes
+// and returns the length of an encoded value.
+//
 // To convert a number value into a length-encoded integer:
 // If the value is < 251, it is stored as a 1-byte integer.
 // If the value is ≥ 251 and < (2^16), it is stored as 0xFC + 2-byte integer.
 // If the value is ≥ (2^16) and < (2^24), it is stored as 0xFD + 3-byte integer.
 // If the value is ≥ (2^24) and < (2^64) it is stored as 0xFE + 8-byte integer.
 // Note: up to MySQL 3.22, 0xFE was followed by a 4-byte integer.
-func encodeUintLenEnc(data []byte, v uint64, isNull bool) (size int) {
+func EncodeUintLenEnc(data []byte, v uint64, isNull bool) (size int) {
 	switch {
 	case isNull:
 		data[0] = 0xFB
@@ -103,6 +119,8 @@ func encodeUintLenEnc(data []byte, v uint64, isNull bool) (size int) {
 	}
 }
 
+// DecodeUintLenEnc decodes a length-encoded integer from a given slice of bytes.
+//
 // To convert a length-encoded integer into its numeric value, check the first
 // byte:
 // If it is < 0xFB, treat it as a 1-byte integer.
@@ -117,7 +135,7 @@ func encodeUintLenEnc(data []byte, v uint64, isNull bool) (size int) {
 // is 0xFE, you must check the length of the packet to verify that it has enough
 // space for a 8-byte integer.
 // If not, it may be an EOF_Packet instead.
-func decodeUintLenEnc(data []byte) (v uint64, isNull bool, size int) {
+func DecodeUintLenEnc(data []byte) (v uint64, isNull bool, size int) {
 	switch data[0] {
 	case 0xFB:
 		return 0xFB, true, 1
@@ -152,7 +170,11 @@ func decodeVarLen64(data []byte, s int) uint64 {
 
 // Protocol::NulTerminatedString
 // Strings that are terminated by a 0x00 byte.
-func decodeStringNullTerm(data []byte) []byte {
+// Spec: https://dev.mysql.com/doc/internals/en/string.html
+
+// DecodeStringNullTerm decodes a null terminated string from a given slice of
+// bytes.
+func DecodeStringNullTerm(data []byte) []byte {
 	for i, c := range data {
 		if c == 0x00 {
 			s := make([]byte, i+1)
@@ -169,22 +191,31 @@ func decodeStringNullTerm(data []byte) []byte {
 // Protocol::VariableLengthString
 // The length of the string is determined by another field or is calculated at
 // runtime.
+
 // Protocol::FixedLengthString
 // Fixed-length strings have a known, hardcoded length.
-func encodeStringVarLen(data, str []byte) {
+
+// EncodeStringVarLen encodes a variable-length string into a given slice of
+// bytes.
+func EncodeStringVarLen(data, str []byte) {
 	copy(data, str)
 }
 
-func decodeStringVarLen(data []byte, n int) []byte {
-	return decodeStringEOF(data[:n])
+// DecodeStringVarLen decodes a varible-length string from a given slice of
+// bytes.
+func DecodeStringVarLen(data []byte, n int) []byte {
+	return DecodeStringEOF(data[:n])
 }
 
 // Protocol::LengthEncodedString
 // A length encoded string is a string that is prefixed with length encoded
 // integer describing the length of the string.
 // It is a special case of Protocol::VariableLengthString
-func decodeStringLenEnc(data []byte) (str []byte, size int) {
-	strlen, _, size := decodeUintLenEnc(data)
+
+// DecodeStringLenEnc decodes a length-encoded string from a given slice of
+// bytes.
+func DecodeStringLenEnc(data []byte) (str []byte, size int) {
+	strlen, _, size := DecodeUintLenEnc(data)
 	strleni := int(strlen)
 	s := make([]byte, strleni)
 	copy(s, data[size:size+strleni])
@@ -194,18 +225,10 @@ func decodeStringLenEnc(data []byte) (str []byte, size int) {
 // Protocol::RestOfPacketString
 // If a string is the last component of a packet, its length can be calculated
 // from the overall packet length minus the current position.
-func decodeStringEOF(data []byte) []byte {
+
+// DecodeStringEOF copies given slice of bytes as a new string.
+func DecodeStringEOF(data []byte) []byte {
 	s := make([]byte, len(data))
 	copy(s, data)
 	return s
-}
-
-func trimString(str []byte) string {
-	fmt.Println(str, string(str))
-	for i, c := range str {
-		if c == 0x00 {
-			return string(str[:i])
-		}
-	}
-	return string(str)
 }

@@ -1,9 +1,11 @@
-package parser
+package binlog
 
 import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/localhots/blt/tools"
 )
 
 // FormatDescription is a description of binary log format.
@@ -23,6 +25,12 @@ type ServerDetails struct {
 	ChecksumAlgorithm ChecksumAlgorithm
 }
 
+// FormatDescriptionEvent contains server details and binary log format
+// description. It is usually the first event in a log file.
+type FormatDescriptionEvent struct {
+	FormatDescription
+}
+
 // Flavor defines the specific kind of MySQL-like database.
 type Flavor string
 
@@ -32,9 +40,7 @@ type ChecksumAlgorithm byte
 const (
 	// FlavorMySQL is the MySQL db flavor.
 	FlavorMySQL = "MySQL"
-)
 
-const (
 	// ChecksumAlgorithmNone means no checksum appened.
 	ChecksumAlgorithmNone ChecksumAlgorithm = 0x00
 	// ChecksumAlgorithmCRC32 used to append a 4 byte checksum at the end.
@@ -43,41 +49,51 @@ const (
 	ChecksumAlgorithmUndefined ChecksumAlgorithm = 0xFF
 )
 
+// Decode decodes given buffer into a format description event.
 // Spec: https://dev.mysql.com/doc/internals/en/format-description-event.html
-func decodeFormatDescription(data []byte) FormatDescription {
-	buf := newReadBuffer(data)
-	fd := FormatDescription{
-		Version:                buf.readUint16(),
-		ServerVersion:          string(trimString(buf.readStringVarLen(50))),
-		CreateTimestamp:        buf.readUint32(),
-		EventHeaderLength:      buf.readUint8(),
-		EventTypeHeaderLengths: buf.readStringEOF(),
-	}
-	fd.ServerDetails = ServerDetails{
+func (e *FormatDescriptionEvent) Decode(data []byte) error {
+	buf := tools.NewBuffer(data)
+	e.Version = buf.ReadUint16()
+	e.ServerVersion = trimString(buf.ReadStringVarLen(50))
+	e.CreateTimestamp = buf.ReadUint32()
+	e.EventHeaderLength = buf.ReadUint8()
+	e.EventTypeHeaderLengths = buf.ReadStringEOF()
+	e.ServerDetails = ServerDetails{
 		Flavor:            FlavorMySQL,
-		Version:           parseVersionNumber(fd.ServerVersion),
+		Version:           parseVersionNumber(e.ServerVersion),
 		ChecksumAlgorithm: ChecksumAlgorithmUndefined,
 	}
-	if fd.ServerDetails.Version > 50601 {
+	if e.ServerDetails.Version > 50601 {
 		// Last 5 bytes are:
 		// [1] Checksum algorithm
 		// [4] Checksum
-		fd.ServerDetails.ChecksumAlgorithm = ChecksumAlgorithm(data[len(data)-5])
-		fd.EventTypeHeaderLengths = fd.EventTypeHeaderLengths[:len(fd.EventTypeHeaderLengths)-5]
+		e.ServerDetails.ChecksumAlgorithm = ChecksumAlgorithm(data[len(data)-5])
+		e.EventTypeHeaderLengths = e.EventTypeHeaderLengths[:len(e.EventTypeHeaderLengths)-5]
 	}
 
-	return fd
+	return nil
 }
 
-func (fd FormatDescription) tableIDSize(et EventType) int {
-	if fd.headerLen(et) == 6 {
+// HeaderLen returns length of event header.
+func (fd FormatDescription) HeaderLen() int {
+	const defaultHeaderLength = 19
+	if fd.EventHeaderLength > 0 {
+		return int(fd.EventHeaderLength)
+	}
+	return defaultHeaderLength
+}
+
+// PostHeaderLen returns length of a post-header for a given event type.
+func (fd FormatDescription) PostHeaderLen(et EventType) int {
+	return int(fd.EventTypeHeaderLengths[et-1])
+}
+
+// TableIDSize returns table ID size for a given event type.
+func (fd FormatDescription) TableIDSize(et EventType) int {
+	if fd.PostHeaderLen(et) == 6 {
 		return 4
 	}
 	return 6
-}
-
-func (fd FormatDescription) headerLen(et EventType) int {
-	return int(fd.EventTypeHeaderLengths[et-1])
 }
 
 func (ca ChecksumAlgorithm) String() string {
@@ -109,4 +125,13 @@ func parseVersionNumber(v string) int {
 		}
 	}
 	return major*10000 + minor*100 + patch
+}
+
+func trimString(str []byte) string {
+	for i, c := range str {
+		if c == 0x00 {
+			return string(str[:i])
+		}
+	}
+	return string(str)
 }
