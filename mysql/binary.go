@@ -43,7 +43,7 @@ func EncodeUint24(data []byte, v uint32) {
 
 // DecodeUint24 decodes 3 bytes as uint32 value from a given slice of bytes.
 func DecodeUint24(data []byte) uint32 {
-	return uint32(decodeVarLen64(data, 3))
+	return uint32(DecodeVarLen64(data, 3))
 }
 
 // int<4>
@@ -68,7 +68,7 @@ func EncodeUint48(data []byte, v uint64) {
 
 // DecodeUint48 decodes 6 bytes as uint64 value from a given slice of bytes.
 func DecodeUint48(data []byte) uint64 {
-	return decodeVarLen64(data, 6)
+	return DecodeVarLen64(data, 6)
 }
 
 // int<8>
@@ -140,11 +140,11 @@ func DecodeUintLenEnc(data []byte) (v uint64, isNull bool, size int) {
 	case 0xFB:
 		return 0xFB, true, 1
 	case 0xFC:
-		return decodeVarLen64(data[1:], 2), false, 3
+		return DecodeVarLen64(data[1:], 2), false, 3
 	case 0xFD:
-		return decodeVarLen64(data[1:], 3), false, 4
+		return DecodeVarLen64(data[1:], 3), false, 4
 	case 0xFE:
-		return decodeVarLen64(data[1:], 8), false, 9
+		return DecodeVarLen64(data[1:], 8), false, 9
 	default:
 		return uint64(data[0]), false, 1
 	}
@@ -160,12 +160,22 @@ func encodeVarLen64(data []byte, v uint64, s int) {
 	}
 }
 
-func decodeVarLen64(data []byte, s int) uint64 {
+// DecodeVarLen64 decodes a number of given size in bytes using Little Endian.
+func DecodeVarLen64(data []byte, s int) uint64 {
 	v := uint64(data[0])
 	for i := 1; i < s; i++ {
 		v |= uint64(data[i]) << uint(i*8)
 	}
 	return v
+}
+
+// DecodeVarLen64BigEndian decodes a number of given size in bytes using Big Endian.
+func DecodeVarLen64BigEndian(data []byte) uint64 {
+	var num uint64
+	for i, b := range data {
+		num |= uint64(b) << (uint(len(data)-i-1) * 8)
+	}
+	return num
 }
 
 // Protocol::NulTerminatedString
@@ -231,4 +241,12 @@ func DecodeStringEOF(data []byte) []byte {
 	s := make([]byte, len(data))
 	copy(s, data)
 	return s
+}
+
+// DecodeBit decodes a bit into not less than 8 bytes.
+func DecodeBit(data []byte, nbits int, length int) uint64 {
+	if nbits > 1 {
+		return DecodeVarLen64(data, length)
+	}
+	return uint64(data[0])
 }
