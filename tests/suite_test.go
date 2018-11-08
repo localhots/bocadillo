@@ -73,6 +73,7 @@ func (tbl *table) insert(t *testing.T, val interface{}) {
 	if val == nil {
 		val = "NULL"
 	}
+
 	// log.Printf("Table: %s Value: %v", tbl.name, val)
 	_, err := tbl.conn.Exec(fmt.Sprintf(`INSERT INTO %s VALUES (?)`, tbl.name), val)
 	if err != nil {
