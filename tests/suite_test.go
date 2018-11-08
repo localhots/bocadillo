@@ -200,6 +200,10 @@ func (s *testSuite) expectValue(t *testing.T, tbl *table, exp interface{}) {
 			}
 			if evt.Table != nil && evt.Table.TableName == tbl.name {
 				// pretty.Println(evt)
+				if len(evt.Rows.Rows) != 1 && len(evt.Rows.Rows[0]) != 1 {
+					panic("Expected one row with one value")
+				}
+
 				out <- evt.Rows.Rows[0][0]
 				return
 			}
