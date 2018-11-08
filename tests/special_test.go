@@ -14,6 +14,12 @@ func TestJSON(t *testing.T) {
 	suite.insertAndCompare(t, tbl, exp)
 }
 
+func TestGeometry(t *testing.T) {
+	// Geometry values are tricky
+	// FIXME: Implement me one day
+	t.Skip("Not implemented")
+}
+
 func TestSet(t *testing.T) {
 	tbl := suite.createTable(mysql.ColumnTypeSet, "'a', 'b', 'c'", attrNone)
 	defer tbl.drop(t)
