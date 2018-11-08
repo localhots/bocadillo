@@ -1,7 +1,6 @@
 package binlog
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/localhots/bocadillo/mysql"
@@ -169,23 +168,11 @@ func (e *RowsEvent) decodeValue(buf *tools.Buffer, ct mysql.ColumnType, meta uin
 
 	// Date and Time
 	case mysql.ColumnTypeYear:
-		return uint16(buf.ReadUint8()) + 1900
+		return mysql.DecodeYear(buf.ReadUint8())
 	case mysql.ColumnTypeDate:
-		v := buf.ReadUint24()
-		if v == 0 {
-			return "0000-00-00"
-		}
-		return fmt.Sprintf("%04d-%02d-%02d", v/(16*32), v/32%16, v%32)
+		return mysql.DecodeDate(buf.ReadUint24())
 	case mysql.ColumnTypeTime:
-		v := buf.ReadUint24()
-		if v == 0 {
-			return "00:00:00"
-		}
-		var sign string
-		if v < 0 {
-			sign = "-"
-		}
-		return fmt.Sprintf("%s%02d:%02d:%02d", sign, v/10000, (v%10000)/100, v%100)
+		return mysql.DecodeTime(buf.ReadUint24())
 	case mysql.ColumnTypeTime2:
 		v, n := mysql.DecodeTime2(buf.Cur(), meta)
 		buf.Skip(n)
@@ -198,24 +185,13 @@ func (e *RowsEvent) decodeValue(buf *tools.Buffer, ct mysql.ColumnType, meta uin
 		buf.Skip(n)
 		return v
 	case mysql.ColumnTypeDatetime:
-		v := buf.ReadUint64()
-		d := v / 1000000
-		t := v % 1000000
-		return mysql.FracTime{Time: time.Date(int(d/10000),
-			time.Month((d%10000)/100),
-			int(d%100),
-			int(t/10000),
-			int((t%10000)/100),
-			int(t%100),
-			0,
-			time.UTC)}.String()
+		return mysql.DecodeDatetime(buf.ReadUint64())
 	case mysql.ColumnTypeDatetime2:
 		v, n := mysql.DecodeDatetime2(buf.Cur(), meta)
 		buf.Skip(n)
 		return v
 
 	// Strings
-	// FIXME
 	case mysql.ColumnTypeString:
 		return readString(buf, length)
 	case mysql.ColumnTypeVarchar, mysql.ColumnTypeVarstring:
