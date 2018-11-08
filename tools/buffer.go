@@ -97,12 +97,12 @@ func (b *Buffer) ReadVarLen64(n int) uint64 {
 
 // ReadFloat32 reads a float32 and advances cursor by 4 bytes.
 func (b *Buffer) ReadFloat32() float32 {
-	return b.ReadFloat32()
+	return mysql.DecodeFloat32(b.Read(4))
 }
 
 // ReadFloat64 reads a float64 and advances cursor by 8 bytes.
 func (b *Buffer) ReadFloat64() float64 {
-	return b.ReadFloat64()
+	return mysql.DecodeFloat64(b.Read(8))
 }
 
 // ReadStringNullTerm reads a NULL-terminated string and advances cursor by its
