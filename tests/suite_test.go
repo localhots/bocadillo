@@ -195,7 +195,8 @@ func (s *testSuite) expectValue(t *testing.T, tbl *table, exp interface{}) {
 		for {
 			evt, err := suite.reader.ReadEvent()
 			if err != nil {
-				t.Fatalf("Failed to read event: %v", err)
+				t.Errorf("Failed to read event: %v", err)
+				return
 			}
 			if evt.Table != nil && evt.Table.TableName == tbl.name {
 				// pretty.Println(evt)
