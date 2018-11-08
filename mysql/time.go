@@ -7,6 +7,31 @@ import (
 	"time"
 )
 
+// DecodeYear ...
+func DecodeYear(v uint8) uint16 {
+	return uint16(v) + 1900
+}
+
+// DecodeDate ...
+func DecodeDate(v uint32) string {
+	if v == 0 {
+		return "0000-00-00"
+	}
+	return fmt.Sprintf("%04d-%02d-%02d", v/(16*32), v/32%16, v%32)
+}
+
+// DecodeTime ...
+func DecodeTime(v uint32) string {
+	if v == 0 {
+		return "00:00:00"
+	}
+	var sign string
+	if v < 0 {
+		sign = "-"
+	}
+	return fmt.Sprintf("%s%02d:%02d:%02d", sign, v/10000, (v%10000)/100, v%100)
+}
+
 // DecodeTimestamp2 ...
 // Implementation borrowed from https://github.com/siddontang/go-mysql/
 func DecodeTimestamp2(data []byte, dec uint16) (string, int) {
@@ -28,6 +53,20 @@ func DecodeTimestamp2(data []byte, dec uint16) (string, int) {
 	}
 
 	return FracTime{time.Unix(sec, usec*1000), int(dec)}.String(), n
+}
+
+// DecodeDatetime ...
+func DecodeDatetime(v uint64) string {
+	d := v / 1000000
+	t := v % 1000000
+	return FracTime{Time: time.Date(int(d/10000),
+		time.Month((d%10000)/100),
+		int(d%100),
+		int(t/10000),
+		int((t%10000)/100),
+		int(t%100),
+		0,
+		time.UTC)}.String()
 }
 
 // DecodeDatetime2 ...
