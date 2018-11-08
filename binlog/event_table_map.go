@@ -55,17 +55,21 @@ func decodeColumnMeta(data []byte, cols []byte) []uint16 {
 	meta := make([]uint16, len(cols))
 	for i, typ := range cols {
 		switch mysql.ColumnType(typ) {
-		case mysql.ColumnTypeString,
-			mysql.ColumnTypeNewDecimal:
-
-			// TODO: Is that correct?
+		case mysql.ColumnTypeString:
+			// 1st: Type
+			// 2nd: Length
+			meta[i] = uint16(data[pos])<<8 | uint16(data[pos+1])
+			pos += 2
+		case mysql.ColumnTypeNewDecimal:
+			// 1st: Precision
+			// 2nd: Decimal places
 			meta[i] = uint16(data[pos])<<8 | uint16(data[pos+1])
 			pos += 2
 		case mysql.ColumnTypeVarchar,
 			mysql.ColumnTypeVarstring,
 			mysql.ColumnTypeBit:
 
-			// TODO: Is that correct?
+			// Likely it's length
 			meta[i] = mysql.DecodeUint16(data[pos:])
 			pos += 2
 		case mysql.ColumnTypeFloat,
