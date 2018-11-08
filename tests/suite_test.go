@@ -3,6 +3,7 @@ package tests
 import (
 	"bytes"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"reflect"
@@ -10,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/localhots/bocadillo/mysql"
 	"github.com/localhots/bocadillo/reader"
 )
@@ -155,6 +157,13 @@ func colTypeSyntax(ct mysql.ColumnType) (typName, attrs string) {
 
 	case mysql.ColumnTypeSet:
 		return "SET", ""
+	case mysql.ColumnTypeJSON:
+		return "JSON", ""
+	case mysql.ColumnTypeGeometry:
+		return "GEOMETRY", ""
+	case mysql.ColumnTypeBit:
+		return "BIT", ""
+
 	default:
 		panic(fmt.Errorf("Syntax not defined for %s", ct.String()))
 	}
@@ -223,20 +232,28 @@ func (s *testSuite) compare(t *testing.T, tbl *table, exp, res interface{}) {
 	// fmt.Printf("VALUE RECEIVED: %T(%+v), EXPECTED: %T(%+v)\n", res, res, exp, exp)
 	switch texp := exp.(type) {
 	case []byte:
-		if !bytes.Equal(texp, res.([]byte)) {
-			t.Errorf("Expected %T(%+v), got %T(%+v)", exp, exp, res, res)
+		switch tbl.colTyp {
+		case mysql.ColumnTypeJSON:
+			var jExp, jRes interface{}
+			if err := json.Unmarshal(texp, &jExp); err != nil {
+				panic(err)
+			}
+			if err := json.Unmarshal(res.([]byte), &jRes); err != nil {
+				panic(err)
+			}
+			if !cmp.Equal(jExp, jRes) {
+				t.Errorf("JSON values are different: %s", cmp.Diff(jExp, jRes))
+			}
+		default:
+			if !bytes.Equal(texp, res.([]byte)) {
+				t.Errorf("Expected %T(%+v), got %T(%+v)", exp, exp, res, res)
+			}
 		}
 	default:
 		if exp != res {
 			t.Errorf("Expected %T(%+v), got %T(%+v)", exp, exp, res, res)
 		}
 	}
-}
-
-func (s *testSuite) insertAndCompare(t *testing.T, tbl *table, val interface{}) {
-	t.Helper()
-	tbl.insert(t, val)
-	suite.expectValue(t, tbl, val)
 }
 
 func signNumber(val interface{}, ct mysql.ColumnType) interface{} {

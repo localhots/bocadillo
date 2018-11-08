@@ -222,8 +222,12 @@ func (e *RowsEvent) decodeValue(buf *tools.Buffer, ct mysql.ColumnType, meta uin
 		return readString(buf, int(meta))
 
 	// Blobs
-	case mysql.ColumnTypeBlob, mysql.ColumnTypeGeometry, mysql.ColumnTypeJSON:
+	case mysql.ColumnTypeBlob, mysql.ColumnTypeGeometry:
 		return buf.ReadStringVarEnc(int(meta))
+	case mysql.ColumnTypeJSON:
+		jdata := buf.ReadStringVarEnc(int(meta))
+		rawj, _ := mysql.DecodeJSON(jdata)
+		return rawj
 	case mysql.ColumnTypeTinyblob:
 		return buf.ReadStringVarEnc(1)
 	case mysql.ColumnTypeMediumblob:
