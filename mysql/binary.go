@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"encoding/binary"
+	"math"
 )
 
 // Protocol::FixedLengthInteger
@@ -162,6 +163,10 @@ func encodeVarLen64(data []byte, v uint64, s int) {
 
 // DecodeVarLen64 decodes a number of given size in bytes using Little Endian.
 func DecodeVarLen64(data []byte, s int) uint64 {
+	if s > len(data) {
+		return 0
+	}
+
 	v := uint64(data[0])
 	for i := 1; i < s; i++ {
 		v |= uint64(data[i]) << uint(i*8)
@@ -241,6 +246,16 @@ func DecodeStringEOF(data []byte) []byte {
 	s := make([]byte, len(data))
 	copy(s, data)
 	return s
+}
+
+// DecodeFloat32 decodes a float value into a float32.
+func DecodeFloat32(data []byte) float32 {
+	return math.Float32frombits(DecodeUint32(data))
+}
+
+// DecodeFloat64 decodes a double value into a float64.
+func DecodeFloat64(data []byte) float64 {
+	return math.Float64frombits(DecodeUint64(data))
 }
 
 // DecodeBit decodes a bit into not less than 8 bytes.

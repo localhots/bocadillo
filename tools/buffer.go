@@ -2,7 +2,6 @@ package tools
 
 import (
 	"encoding/binary"
-	"math"
 
 	"github.com/localhots/bocadillo/mysql"
 )
@@ -98,12 +97,12 @@ func (b *Buffer) ReadVarLen64(n int) uint64 {
 
 // ReadFloat32 reads a float32 and advances cursor by 4 bytes.
 func (b *Buffer) ReadFloat32() float32 {
-	return math.Float32frombits(b.ReadUint32())
+	return b.ReadFloat32()
 }
 
 // ReadFloat64 reads a float64 and advances cursor by 8 bytes.
 func (b *Buffer) ReadFloat64() float64 {
-	return math.Float64frombits(b.ReadUint64())
+	return b.ReadFloat64()
 }
 
 // ReadStringNullTerm reads a NULL-terminated string and advances cursor by its

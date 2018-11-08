@@ -6,6 +6,14 @@ import (
 	"github.com/localhots/bocadillo/mysql"
 )
 
+func TestJSON(t *testing.T) {
+	tbl := suite.createTable(mysql.ColumnTypeJSON, "", attrNone)
+	defer tbl.drop(t)
+
+	exp := []byte(`{"hello": "world", "foo": [1, 2, 3.75]}`)
+	suite.insertAndCompare(t, tbl, exp)
+}
+
 func TestSet(t *testing.T) {
 	tbl := suite.createTable(mysql.ColumnTypeSet, "'a', 'b', 'c'", attrNone)
 	defer tbl.drop(t)
