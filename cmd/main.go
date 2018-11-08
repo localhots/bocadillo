@@ -39,8 +39,8 @@ func main() {
 	}
 
 	off := conf.Offset
-	for i := 0; i < 100; i++ {
-		// for {
+	// for i := 0; i < 100; i++ {
+	for {
 		evt, err := reader.ReadEvent()
 		if err != nil {
 			log.Fatalf(ctx, "Failed to read event: %v", err)
