@@ -153,6 +153,8 @@ func colTypeSyntax(ct mysql.ColumnType) (typName, attrs string) {
 	case mysql.ColumnTypeLongblob:
 		return "LONGBLOB", ""
 
+	case mysql.ColumnTypeSet:
+		return "SET", ""
 	default:
 		panic(fmt.Errorf("Syntax not defined for %s", ct.String()))
 	}
@@ -161,6 +163,18 @@ func colTypeSyntax(ct mysql.ColumnType) (typName, attrs string) {
 //
 // Expectations
 //
+
+func (s *testSuite) insertAndCompare(t *testing.T, tbl *table, val interface{}) {
+	t.Helper()
+	tbl.insert(t, val)
+	suite.expectValue(t, tbl, val)
+}
+
+func (s *testSuite) insertAndCompareExp(t *testing.T, tbl *table, val, exp interface{}) {
+	t.Helper()
+	tbl.insert(t, val)
+	suite.expectValue(t, tbl, exp)
+}
 
 func (s *testSuite) expectValue(t *testing.T, tbl *table, exp interface{}) {
 	t.Helper()
