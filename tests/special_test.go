@@ -20,6 +20,12 @@ func TestGeometry(t *testing.T) {
 	t.Skip("Not implemented")
 }
 
+func TestBit(t *testing.T) {
+	// Where to get these?
+	// FIXME: Implement me one day
+	t.Skip("Not implemented")
+}
+
 func TestSet(t *testing.T) {
 	tbl := suite.createTable(mysql.ColumnTypeSet, "'a', 'b', 'c'", attrNone)
 	defer tbl.drop(t)
