@@ -158,6 +158,8 @@ func colTypeSyntax(ct mysql.ColumnType) (typName, attrs string) {
 
 	case mysql.ColumnTypeSet:
 		return "SET", ""
+	case mysql.ColumnTypeEnum:
+		return "ENUM", ""
 	case mysql.ColumnTypeJSON:
 		return "JSON", ""
 	case mysql.ColumnTypeGeometry:

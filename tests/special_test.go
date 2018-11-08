@@ -51,3 +51,28 @@ func TestSet(t *testing.T) {
 		})
 	}
 }
+
+func TestEnum(t *testing.T) {
+	tbl := suite.createTable(mysql.ColumnTypeEnum, "'a', 'b', 'c'", attrNone)
+	defer tbl.drop(t)
+
+	const (
+		// TODO: How do I define such a bitmask properly?
+		bA int64 = 1
+		bB int64 = 2
+		bC int64 = 4
+	)
+
+	inputs := map[string]int64{
+		"":  0,
+		"a": bA,
+		"b": bB,
+		"c": bC,
+	}
+
+	for in, exp := range inputs {
+		t.Run("input "+in, func(t *testing.T) {
+			suite.insertAndCompareExp(t, tbl, in, exp)
+		})
+	}
+}
