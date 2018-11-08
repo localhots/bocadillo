@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"bytes"
 	"database/sql"
 	"fmt"
 	"log"
@@ -143,6 +144,15 @@ func colTypeSyntax(ct mysql.ColumnType) (typName, attrs string) {
 		return "CHAR", "CHARACTER SET utf8mb4"
 	case mysql.ColumnTypeVarchar:
 		return "VARCHAR", "CHARACTER SET utf8mb4"
+	case mysql.ColumnTypeTinyblob:
+		return "TINYBLOB", ""
+	case mysql.ColumnTypeBlob:
+		return "BLOB", ""
+	case mysql.ColumnTypeMediumblob:
+		return "MEDIUMBLOB", ""
+	case mysql.ColumnTypeLongblob:
+		return "LONGBLOB", ""
+
 	default:
 		panic(fmt.Errorf("Syntax not defined for %s", ct.String()))
 	}
@@ -197,8 +207,15 @@ func (s *testSuite) compare(t *testing.T, tbl *table, exp, res interface{}) {
 	}
 
 	// fmt.Printf("VALUE RECEIVED: %T(%+v), EXPECTED: %T(%+v)\n", res, res, exp, exp)
-	if exp != res {
-		t.Errorf("Expected %T(%+v), got %T(%+v)", exp, exp, res, res)
+	switch texp := exp.(type) {
+	case []byte:
+		if !bytes.Equal(texp, res.([]byte)) {
+			t.Errorf("Expected %T(%+v), got %T(%+v)", exp, exp, res, res)
+		}
+	default:
+		if exp != res {
+			t.Errorf("Expected %T(%+v), got %T(%+v)", exp, exp, res, res)
+		}
 	}
 }
 

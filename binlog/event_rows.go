@@ -112,7 +112,9 @@ func (e *RowsEvent) decodeRows(buf *tools.Buffer, td TableDescription, bm []byte
 		}
 
 		row[i] = e.decodeValue(buf, mysql.ColumnType(td.ColumnTypes[i]), td.ColumnMeta[i])
-		// pretty.Println("PARSED", mysql.ColumnType(td.ColumnTypes[i]).String(), td.ColumnMeta[i], row[i])
+		// fmt.Printf("Parsed %s, meta %x, value %++v\n",
+		// 	mysql.ColumnType(td.ColumnTypes[i]).String(), td.ColumnMeta[i], row[i],
+		// )
 	}
 	return row, nil
 }
