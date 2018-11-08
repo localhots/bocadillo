@@ -4,7 +4,6 @@ import (
 	"github.com/juju/errors"
 	"github.com/localhots/bocadillo/binlog"
 	"github.com/localhots/bocadillo/schema"
-	"github.com/localhots/pretty"
 )
 
 // Reader ...
@@ -20,6 +19,8 @@ type Reader struct {
 type Event struct {
 	Header binlog.EventHeader
 	Body   []byte
+	Table  *binlog.TableDescription
+	Rows   *binlog.RowsEvent
 }
 
 // NewReader ...
@@ -73,13 +74,13 @@ func (r *Reader) ReadEvent() (*Event, error) {
 		if err = fde.Decode(evt.Body); err == nil {
 			r.format = fde.FormatDescription
 		}
-		pretty.Println(evt.Header.Type.String(), r.format)
+		// pretty.Println(evt.Header.Type.String(), r.format)
 	case binlog.EventTypeRotate:
 		var re binlog.RotateEvent
 		if err = re.Decode(evt.Body, r.format); err == nil {
 			r.state = re.NextFile
 		}
-		pretty.Println(evt.Header.Type.String(), r.state)
+		// pretty.Println(evt.Header.Type.String(), r.state)
 	case binlog.EventTypeTableMap:
 		var tme binlog.TableMapEvent
 		if err = tme.Decode(evt.Body, r.format); err == nil {
@@ -102,9 +103,11 @@ func (r *Reader) ReadEvent() (*Event, error) {
 		if !ok {
 			return nil, errors.New("Unknown table ID")
 		}
-		if err = re.Decode(evt.Body, r.format, td); err == nil {
-			pretty.Println(re)
+		if err = re.Decode(evt.Body, r.format, td); err != nil {
+			return nil, err
 		}
+		evt.Table = &td
+		evt.Rows = &re
 	case binlog.EventTypeXID:
 		// TODO: Add support
 	case binlog.EventTypeGTID:
