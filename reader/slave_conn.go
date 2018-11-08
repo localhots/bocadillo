@@ -2,7 +2,6 @@ package reader
 
 import (
 	"database/sql/driver"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
@@ -101,7 +100,6 @@ func (c *SlaveConn) RegisterSlave() error {
 	// buf.WriteUint32(replicationRank)
 	// buf.WriteUint32(masterID)
 
-	fmt.Println(hex.Dump(buf.Bytes()))
 	return c.runCmd(buf.Bytes())
 }
 

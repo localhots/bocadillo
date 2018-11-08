@@ -2,6 +2,7 @@ package tools
 
 import (
 	"encoding/binary"
+	"math"
 
 	"github.com/localhots/bocadillo/mysql"
 )
@@ -40,6 +41,11 @@ func (b *Buffer) Read(n int) []byte {
 // Cur returns remaining unread buffer.
 func (b *Buffer) Cur() []byte {
 	return b.data[b.pos:]
+}
+
+// More returns true if there's more to read.
+func (b *Buffer) More() bool {
+	return b.pos < len(b.data)
 }
 
 // Bytes returns entire buffer contents.
@@ -84,6 +90,22 @@ func (b *Buffer) ReadUintLenEnc() (val uint64, isNull bool, size int) {
 	return
 }
 
+// ReadVarLen64 reads a number encoded in given size of bytes and advances
+// cursor accordingly.
+func (b *Buffer) ReadVarLen64(n int) uint64 {
+	return mysql.DecodeVarLen64(b.Read(n), n)
+}
+
+// ReadFloat32 reads a float32 and advances cursor by 4 bytes.
+func (b *Buffer) ReadFloat32() float32 {
+	return math.Float32frombits(b.ReadUint32())
+}
+
+// ReadFloat64 reads a float64 and advances cursor by 8 bytes.
+func (b *Buffer) ReadFloat64() float64 {
+	return math.Float64frombits(b.ReadUint64())
+}
+
 // ReadStringNullTerm reads a NULL-terminated string and advances cursor by its
 // length plus 1 extra byte.
 func (b *Buffer) ReadStringNullTerm() []byte {
@@ -96,6 +118,13 @@ func (b *Buffer) ReadStringNullTerm() []byte {
 // same number of bytes.
 func (b *Buffer) ReadStringVarLen(n int) []byte {
 	return mysql.DecodeStringVarLen(b.Read(n), n)
+}
+
+// ReadStringVarEnc reads a variable-length length of the string and the string
+// itself, then advances cursor by the same number of bytes.
+func (b *Buffer) ReadStringVarEnc(n int) []byte {
+	length := int(mysql.DecodeVarLen64(b.Read(n), n))
+	return mysql.DecodeStringVarLen(b.Read(length), length)
 }
 
 // ReadStringLenEnc reads a length-encoded string and advances cursor
