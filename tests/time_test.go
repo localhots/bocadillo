@@ -150,7 +150,7 @@ func TestDatetime(t *testing.T) {
 			defer tbl.drop(t)
 
 			for _, v := range vals {
-				t.Run(fmt.Sprint(v), func(t *testing.T) {
+				t.Run(v, func(t *testing.T) {
 					suite.insertAndCompare(t, tbl, v)
 				})
 			}

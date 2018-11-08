@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
@@ -51,11 +50,11 @@ func TestDecimal(t *testing.T) {
 			defer tbl.drop(t)
 
 			for _, v := range vals {
-				t.Run(fmt.Sprint(v), func(t *testing.T) {
+				t.Run(v, func(t *testing.T) {
 					suite.insertAndCompare(t, tbl, v)
 				})
 				if !strings.HasPrefix(v, "0") {
-					t.Run(fmt.Sprint("-"+v), func(t *testing.T) {
+					t.Run("-"+v, func(t *testing.T) {
 						suite.insertAndCompare(t, tbl, "-"+v)
 					})
 				}
