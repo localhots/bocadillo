@@ -14,7 +14,7 @@ to provide underlying connection and basic packet exchange.
 * [x] FormatDescriptionEvent
 * [x] TableMapEvent
 * [x] RotateEvent
-* [ ] RowsEvent
+* [x] RowsEvent
 * [ ] XIDEvent
 * [ ] GTIDEvent
 * [ ] QueryEvent
