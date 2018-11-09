@@ -3,7 +3,7 @@ package reader
 import (
 	"github.com/juju/errors"
 	"github.com/localhots/bocadillo/binlog"
-	"github.com/localhots/bocadillo/schema"
+	"github.com/localhots/bocadillo/reader/schema"
 )
 
 // Reader ...
