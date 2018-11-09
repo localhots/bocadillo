@@ -1,11 +1,11 @@
 package binlog
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/localhots/bocadillo/mysql"
 	"github.com/localhots/bocadillo/tools"
-	"github.com/localhots/pretty"
 )
 
 // RowsEvent contains a Rows Event.
@@ -233,10 +233,8 @@ func (e *RowsEvent) decodeValue(buf *tools.Buffer, ct mysql.ColumnType, meta uin
 		// Too new
 		fallthrough
 	default:
-		pretty.Printf("UNSUPPORTED Type %d %s %x %x\n", ct, ct.String(), meta, buf.Cur())
+		return fmt.Errorf("unsupported type: %d (%s) %x %x", ct, ct.String(), meta, buf.Cur())
 	}
-
-	return nil
 }
 
 // FIXME: Something is fishy with this whole string decoding. It seems like it

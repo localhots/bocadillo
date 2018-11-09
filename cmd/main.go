@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/localhots/bocadillo/reader"
-	"github.com/localhots/gobelt/log"
 )
 
 func main() {
@@ -30,12 +29,12 @@ func main() {
 
 	conn, err := reader.Connect(*dsn, conf)
 	if err != nil {
-		log.Fatalf(ctx, "Failed to establish connection: %v", err)
+		log.Fatalf("Failed to establish connection: %v", err)
 	}
 
 	reader, err := reader.NewReader(conn)
 	if err != nil {
-		log.Fatalf(ctx, "Failed to create reader: %v", err)
+		log.Fatalf( "Failed to create reader: %v", err)
 	}
 
 	off := conf.Offset
@@ -43,14 +42,10 @@ func main() {
 	for {
 		evt, err := reader.ReadEvent()
 		if err != nil {
-			log.Fatalf(ctx, "Failed to read event: %v", err)
+			log.Fatalf("Failed to read event: %v", err)
 		}
 		ts := time.Unix(int64(evt.Header.Timestamp), 0).Format(time.RFC3339)
-		log.Info(ctx, "Event received", log.F{
-			"type":      evt.Header.Type,
-			"timestamp": ts,
-			"offset":    off,
-		})
+		log.Printf("Event received: %s %d, %d\n", evt.Header.Type.String(), ts, off4	})
 		off = evt.Header.NextOffset
 	}
 }
