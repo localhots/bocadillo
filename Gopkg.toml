@@ -1,0 +1,15 @@
+[[constraint]]
+  name = "github.com/google/go-cmp"
+  version = "0.2.0"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/juju/errors"
+
+[[constraint]]
+  branch = "bocadillo"
+  name = "github.com/localhots/mysql"
+
+[prune]
+  go-tests = true
+  unused-packages = true
