@@ -259,9 +259,9 @@ func DecodeFloat64(data []byte) float64 {
 }
 
 // DecodeBit decodes a bit into not less than 8 bytes.
-func DecodeBit(data []byte, nbits int, length int) uint64 {
+func DecodeBit(data []byte, nbits int, length int) (v uint64, n int) {
 	if nbits > 1 {
-		return DecodeVarLen64(data, length)
+		return DecodeVarLen64(data, length), length
 	}
-	return uint64(data[0])
+	return uint64(data[0]), 1
 }
