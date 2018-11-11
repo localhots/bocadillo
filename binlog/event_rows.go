@@ -88,15 +88,13 @@ func (e *RowsEvent) Decode(connBuff []byte, fd FormatDescription, td TableDescri
 
 	e.Rows = make([][]interface{}, 0)
 	for {
-		tools.Debug("\n\n=== PARSING ROW\n")
 		row, err := e.decodeRows(buf, td, e.ColumnBitmap1)
 		if err != nil {
 			return err
 		}
 		e.Rows = append(e.Rows, row)
 
-		if RowsEventHasSecondBitmap(e.Type) { // && buf.More()
-			tools.Debug("===== SECOND BITMASK ROUND =====\n")
+		if RowsEventHasSecondBitmap(e.Type) {
 			row, err := e.decodeRows(buf, td, e.ColumnBitmap2)
 			if err != nil {
 				return err
@@ -124,32 +122,22 @@ func (e *RowsEvent) decodeRows(buf *tools.Buffer, td TableDescription, bm []byte
 	row := make([]interface{}, e.ColumnCount)
 	for i := 0; i < int(e.ColumnCount); i++ {
 		if !isBitSet(bm, i) {
-			tools.Debugf("Skipped %s, meta %x, BIT NOT SET\n\n",
-				mysql.ColumnType(td.ColumnTypes[i]).String(), td.ColumnMeta[i],
-			)
 			continue
 		}
 
 		isNull := (uint32(nullBM[nullIdx/8]) >> uint32(nullIdx%8)) & 1
 		nullIdx++
 		if isNull > 0 {
-			tools.Debugf("Parsed %s, meta %x, NULL\n\n",
-				mysql.ColumnType(td.ColumnTypes[i]).String(), td.ColumnMeta[i],
-			)
 			row[i] = nil
 			continue
 		}
 
 		row[i] = e.decodeValue(buf, mysql.ColumnType(td.ColumnTypes[i]), td.ColumnMeta[i])
-		tools.Debugf("Parsed %s, meta %x, value %++v\n\n",
-			mysql.ColumnType(td.ColumnTypes[i]).String(), td.ColumnMeta[i], row[i],
-		)
 	}
 	return row, nil
 }
 
 func (e *RowsEvent) decodeValue(buf *tools.Buffer, ct mysql.ColumnType, meta uint16) interface{} {
-	tools.Debugf("-- PRE-PARSING %s, meta %x\n", ct.String(), meta)
 	var length int
 	if ct == mysql.ColumnTypeString {
 		if meta > 0xFF {
@@ -162,12 +150,8 @@ func (e *RowsEvent) decodeValue(buf *tools.Buffer, ct mysql.ColumnType, meta uin
 				ct = mysql.ColumnType(typeByte)
 				length = int(lengthByte)
 			}
-		} else {
-			length = int(meta)
 		}
 	}
-
-	tools.Debugf("-- PARSING %s, meta %x\n", ct.String(), meta)
 
 	switch ct {
 	case mysql.ColumnTypeNull:
@@ -273,12 +257,12 @@ func (e *RowsEvent) decodeValue(buf *tools.Buffer, ct mysql.ColumnType, meta uin
 	}
 }
 
-// FIXME: Something is fishy with this whole string decoding. It seems like it
-// could be simplified greatly
 func readString(buf *tools.Buffer, length int) string {
+	// Length is encoded in 1 byte
 	if length < 256 {
 		return string(buf.ReadStringVarEnc(1))
 	}
+	// Length is encoded in 2 bytes
 	return string(buf.ReadStringVarEnc(2))
 }
 
