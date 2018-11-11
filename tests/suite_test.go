@@ -29,10 +29,15 @@ const (
 )
 
 type table struct {
-	name   string
-	colTyp mysql.ColumnType
+	name string
+	cols []column
+	conn *sql.DB
+}
+
+type column struct {
+	typ    mysql.ColumnType
+	length string
 	attrs  byte
-	conn   *sql.DB
 }
 
 //
@@ -40,8 +45,16 @@ type table struct {
 //
 
 func (s *testSuite) createTable(typ mysql.ColumnType, length string, attrs byte) *table {
-	name := strings.ToLower(typ.String()) + fmt.Sprintf("_test_%d", time.Now().UnixNano())
-	cols := colDef(typ, length, attrs)
+	return s.createTableMulti(column{typ, length, attrs})
+}
+
+func (s *testSuite) createTableMulti(cols ...column) *table {
+	name := fmt.Sprintf("test_table_%d", time.Now().UnixNano())
+	colDefs := make([]string, len(cols))
+	for i, col := range cols {
+		colDefs[i] = colDef(col.typ, col.length, col.attrs)
+	}
+	colsDefStr := strings.Join(colDefs, ",\n\t")
 	_, err := s.conn.Exec(fmt.Sprintf(`DROP TABLE IF EXISTS %s`, name))
 	if err != nil {
 		log.Fatal(err)
@@ -49,10 +62,10 @@ func (s *testSuite) createTable(typ mysql.ColumnType, length string, attrs byte)
 
 	tableQuery := fmt.Sprintf(`CREATE TABLE %s (
 	%s
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`, name, cols)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`, name, colsDefStr)
 
 	fmt.Println("--------")
-	fmt.Printf("-- Creating test table: type %s\n", typ.String())
+	fmt.Println("-- Creating test table")
 	fmt.Println(tableQuery)
 	fmt.Println("--------")
 
@@ -61,21 +74,18 @@ func (s *testSuite) createTable(typ mysql.ColumnType, length string, attrs byte)
 		log.Fatal(err)
 	}
 	return &table{
-		name:   name,
-		colTyp: typ,
-		attrs:  attrs,
-		conn:   s.conn,
+		name: name,
+		cols: cols,
+		conn: s.conn,
 	}
 }
 
-func (tbl *table) insert(t *testing.T, val interface{}) {
+func (tbl *table) insert(t *testing.T, vals ...interface{}) {
 	t.Helper()
-	if val == nil {
-		val = "NULL"
-	}
+	ph := strings.Repeat("?,", len(vals))
+	ph = ph[:len(ph)-1]
 
-	// log.Printf("Table: %s Value: %v", tbl.name, val)
-	_, err := tbl.conn.Exec(fmt.Sprintf(`INSERT INTO %s VALUES (?)`, tbl.name), val)
+	_, err := tbl.conn.Exec(fmt.Sprintf(`INSERT INTO %s VALUES (%s)`, tbl.name, ph), vals...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -176,21 +186,21 @@ func colTypeSyntax(ct mysql.ColumnType) (typName, attrs string) {
 // Expectations
 //
 
-func (s *testSuite) insertAndCompare(t *testing.T, tbl *table, val interface{}) {
+func (s *testSuite) insertAndCompare(t *testing.T, tbl *table, vals ...interface{}) {
 	t.Helper()
-	tbl.insert(t, val)
-	suite.expectValue(t, tbl, val)
+	tbl.insert(t, vals...)
+	suite.expectValue(t, tbl, vals)
 }
 
-func (s *testSuite) insertAndCompareExp(t *testing.T, tbl *table, val, exp interface{}) {
+func (s *testSuite) insertAndCompareExp(t *testing.T, tbl *table, vals, exps []interface{}) {
 	t.Helper()
-	tbl.insert(t, val)
-	suite.expectValue(t, tbl, exp)
+	tbl.insert(t, vals...)
+	suite.expectValue(t, tbl, exps)
 }
 
-func (s *testSuite) expectValue(t *testing.T, tbl *table, exp interface{}) {
+func (s *testSuite) expectValue(t *testing.T, tbl *table, exp []interface{}) {
 	t.Helper()
-	out := make(chan interface{})
+	out := make(chan []interface{})
 	go func() {
 		for {
 			evt, err := suite.reader.ReadEvent()
@@ -203,11 +213,11 @@ func (s *testSuite) expectValue(t *testing.T, tbl *table, exp interface{}) {
 				if err != nil {
 					t.Fatalf("Failed to decode rows event: %v", err)
 				}
-				if len(re.Rows) != 1 && len(re.Rows[0]) != 1 {
-					t.Fatal("Expected 1 row with 1 value")
+				if len(re.Rows) != 1 {
+					t.Fatal("Expected 1 row")
 				}
 
-				out <- re.Rows[0][0]
+				out <- re.Rows[0]
 				return
 			}
 		}
@@ -215,18 +225,18 @@ func (s *testSuite) expectValue(t *testing.T, tbl *table, exp interface{}) {
 
 	select {
 	case res := <-out:
-		s.compare(t, tbl, exp, res)
+		for i := range res {
+			s.compare(t, tbl.cols[i], exp[i], res[i])
+		}
 	case <-time.After(3 * time.Second):
 		t.Fatalf("Value was not received")
 	}
 }
 
-func (s *testSuite) compare(t *testing.T, tbl *table, exp, res interface{}) {
+func (s *testSuite) compare(t *testing.T, col column, exp, res interface{}) {
 	// Sign integer if necessary
-	if attrUnsigned&tbl.attrs == 0 {
-		// old := res
-		res = signNumber(res, tbl.colTyp)
-		// t.Logf("Converted unsigned %d into signed %d", old, res)
+	if attrUnsigned&col.attrs == 0 {
+		res = signNumber(res, col.typ)
 	}
 
 	// Expectations would be pointers for null types, dereference them because
@@ -240,10 +250,9 @@ func (s *testSuite) compare(t *testing.T, tbl *table, exp, res interface{}) {
 		}
 	}
 
-	// fmt.Printf("VALUE RECEIVED: %T(%+v), EXPECTED: %T(%+v)\n", res, res, exp, exp)
 	switch texp := exp.(type) {
 	case []byte:
-		switch tbl.colTyp {
+		switch col.typ {
 		case mysql.ColumnTypeJSON:
 			var jExp, jRes interface{}
 			if err := json.Unmarshal(texp, &jExp); err != nil {

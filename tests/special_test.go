@@ -47,7 +47,7 @@ func TestSet(t *testing.T) {
 
 	for in, exp := range inputs {
 		t.Run("input "+in, func(t *testing.T) {
-			suite.insertAndCompareExp(t, tbl, in, exp)
+			suite.insertAndCompareExp(t, tbl, iSlice(in), iSlice(exp))
 		})
 	}
 }
@@ -64,7 +64,11 @@ func TestEnum(t *testing.T) {
 	}
 	for in, exp := range inputs {
 		t.Run("input "+in, func(t *testing.T) {
-			suite.insertAndCompareExp(t, tbl, in, exp)
+			suite.insertAndCompareExp(t, tbl, iSlice(in), iSlice(exp))
 		})
 	}
+}
+
+func iSlice(i interface{}) []interface{} {
+	return []interface{}{i}
 }
