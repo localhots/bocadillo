@@ -7,6 +7,7 @@ as a slave and process binary log.
 
 ```go
 // import "github.com/localhots/bocadillo/reader"
+// import "github.com/localhots/bocadillo/reader/slave"
 
 reader, _ := reader.New("root@(127.0.0.1:3306)/testdb", slave.Config{
 	ServerID: 1000,               // Arbitrary unique ID
@@ -18,16 +19,16 @@ for {
 	evt, err := reader.ReadEvent()
 	if err != nil {
 		log.Fatalf("Failed to read event: %v", err)
-    }
-    
+	}
+	
 	log.Println("Event received:", evt.Header.Type.String())
 	if evt.Table != nil {
 		rows, err := evt.DecodeRows()
 		if err != nil {
 			log.Fatalf("Failed to parse rows event: %v", err)
-        }
-        log.Println("Table:", evt.Table.TableName, "Changes:", rows.Rows)
-    }
+		}
+		log.Println("Table:", evt.Table.TableName, "Changes:", rows.Rows)
+	}
 }
 
 ```
