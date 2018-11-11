@@ -155,5 +155,6 @@ func (e Event) DecodeRows() (binlog.RowsEvent, error) {
 	if binlog.RowsEventVersion(e.Header.Type) < 0 {
 		return re, errors.New("invalid rows event")
 	}
-	return re, re.Decode(e.Buffer, e.Format, *e.Table)
+	err := re.Decode(e.Buffer, e.Format, *e.Table)
+	return re, err
 }
