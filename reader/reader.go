@@ -118,3 +118,12 @@ func (r *Reader) ReadEvent() (*Event, error) {
 
 	return &evt, err
 }
+
+// DecodeRows decodes buffer into a rows event.
+func (e Event) DecodeRows() (binlog.RowsEvent, error) {
+	re := binlog.RowsEvent{Type: e.Header.Type}
+	if binlog.RowsEventVersion(e.Header.Type) < 0 {
+		return re, errors.New("invalid rows event")
+	}
+	return re, re.Decode(e.Buffer, e.Format, *e.Table)
+}
