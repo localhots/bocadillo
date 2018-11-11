@@ -1,4 +1,4 @@
-package reader
+package slave
 
 import (
 	"database/sql/driver"
@@ -10,13 +10,14 @@ import (
 	"github.com/localhots/mysql"
 )
 
-// SlaveConn ...
-type SlaveConn struct {
+// Conn is a slave connection used to issue a binlog dump command.
+type Conn struct {
 	conn *mysql.ExtendedConn
 	conf Config
 }
 
-// Config ...
+// Config contains slave connection configuration. It is passed to master upon
+// registration.
 type Config struct {
 	ServerID uint32
 	File     string
@@ -35,8 +36,8 @@ const (
 	resultERR byte = 0xFF
 )
 
-// Connect ...
-func Connect(dsn string, conf Config) (*SlaveConn, error) {
+// Connect esablishes a new slave connection.
+func Connect(dsn string, conf Config) (*Conn, error) {
 	if conf.Hostname == "" {
 		name, err := os.Hostname()
 		if err != nil {
@@ -59,12 +60,12 @@ func Connect(dsn string, conf Config) (*SlaveConn, error) {
 		return nil, err
 	}
 
-	return &SlaveConn{conn: extconn, conf: conf}, nil
+	return &Conn{conn: extconn, conf: conf}, nil
 }
 
 // ReadPacket reads next packet from the server and processes the first status
 // byte.
-func (c *SlaveConn) ReadPacket() ([]byte, error) {
+func (c *Conn) ReadPacket() ([]byte, error) {
 	data, err := c.conn.ReadPacket()
 	if err != nil {
 		return nil, err
@@ -84,7 +85,7 @@ func (c *SlaveConn) ReadPacket() ([]byte, error) {
 
 // RegisterSlave issues a REGISTER_SLAVE command to master.
 // Spec: https://dev.mysql.com/doc/internals/en/com-register-slave.html
-func (c *SlaveConn) RegisterSlave() error {
+func (c *Conn) RegisterSlave() error {
 	c.conn.ResetSequence()
 
 	buf := tools.NewCommandBuffer(1 + 4 + 1 + len(c.conf.Hostname) + 1 + 1 + 2 + 4 + 4)
@@ -106,7 +107,7 @@ func (c *SlaveConn) RegisterSlave() error {
 // StartBinlogDump issues a BINLOG_DUMP command to master.
 // Spec: https://dev.mysql.com/doc/internals/en/com-binlog-dump.html
 // TODO: https://dev.mysql.com/doc/internals/en/com-binlog-dump-gtid.html
-func (c *SlaveConn) StartBinlogDump() error {
+func (c *Conn) StartBinlogDump() error {
 	c.conn.ResetSequence()
 
 	buf := tools.NewCommandBuffer(1 + 4 + 2 + 4 + len(c.conf.File))
@@ -120,7 +121,7 @@ func (c *SlaveConn) StartBinlogDump() error {
 }
 
 // DisableChecksum disables CRC32 checksums for this connection.
-func (c *SlaveConn) DisableChecksum() error {
+func (c *Conn) DisableChecksum() error {
 	cs, err := c.GetVar("BINLOG_CHECKSUM")
 	if err != nil {
 		return err
@@ -133,7 +134,7 @@ func (c *SlaveConn) DisableChecksum() error {
 }
 
 // GetVar fetches value of the given variable.
-func (c *SlaveConn) GetVar(name string) (string, error) {
+func (c *Conn) GetVar(name string) (string, error) {
 	rows, err := c.conn.Query(fmt.Sprintf("SHOW VARIABLES LIKE %q", name), []driver.Value{})
 	if err != nil {
 		return "", notEOF(err)
@@ -150,11 +151,11 @@ func (c *SlaveConn) GetVar(name string) (string, error) {
 }
 
 // SetVar assigns a new value to the given variable.
-func (c *SlaveConn) SetVar(name, val string) error {
+func (c *Conn) SetVar(name, val string) error {
 	return c.conn.Exec(fmt.Sprintf("SET %s=%q", name, val))
 }
 
-func (c *SlaveConn) runCmd(data []byte) error {
+func (c *Conn) runCmd(data []byte) error {
 	err := c.conn.WritePacket(data)
 	if err != nil {
 		return err

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/localhots/bocadillo/reader"
+	"github.com/localhots/bocadillo/reader/slave"
 )
 
 func main() {
@@ -20,23 +21,16 @@ func main() {
 	validate((*dsn != ""), "Database source name is not set")
 	validate((*id != 0), "Server ID is not set")
 	validate((*file != ""), "Binary log file is not set")
-	conf := reader.Config{
+
+	reader, err := reader.New(*dsn, slave.Config{
 		ServerID: uint32(*id),
 		File:     *file,
 		Offset:   uint32(*offset),
-	}
-
-	conn, err := reader.Connect(*dsn, conf)
-	if err != nil {
-		log.Fatalf("Failed to establish connection: %v", err)
-	}
-
-	reader, err := reader.NewReader(conn)
+	})
 	if err != nil {
 		log.Fatalf("Failed to create reader: %v", err)
 	}
 
-	off := conf.Offset
 	// for i := 0; i < 100; i++ {
 	for {
 		evt, err := reader.ReadEvent()
@@ -44,8 +38,7 @@ func main() {
 			log.Fatalf("Failed to read event: %v", err)
 		}
 		ts := time.Unix(int64(evt.Header.Timestamp), 0).Format(time.RFC3339)
-		log.Printf("Event received: %s %s, %d\n", evt.Header.Type.String(), ts, off)
-		off = evt.Header.NextOffset
+		log.Printf("Event received: %s %s, %d\n", evt.Header.Type.String(), ts, evt.Header.NextOffset)
 
 		if evt.Table != nil {
 			_, err := evt.DecodeRows()
