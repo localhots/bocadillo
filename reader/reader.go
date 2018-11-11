@@ -35,6 +35,10 @@ func New(dsn string, sc slave.Config) (*Reader, error) {
 
 	r := &Reader{
 		conn: conn,
+		state: binlog.Position{
+			File:   sc.File,
+			Offset: uint64(sc.Offset),
+		},
 	}
 	r.initTableMap()
 
@@ -129,6 +133,11 @@ func (r *Reader) ReadEvent() (*Event, error) {
 	}
 
 	return &evt, err
+}
+
+// State returns current position in the binary log.
+func (r *Reader) State() binlog.Position {
+	return r.state
 }
 
 // Close underlying database connection.
