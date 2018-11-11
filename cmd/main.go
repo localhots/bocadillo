@@ -46,6 +46,13 @@ func main() {
 		ts := time.Unix(int64(evt.Header.Timestamp), 0).Format(time.RFC3339)
 		log.Printf("Event received: %s %s, %d\n", evt.Header.Type.String(), ts, off)
 		off = evt.Header.NextOffset
+
+		if evt.Table != nil {
+			_, err := evt.DecodeRows()
+			if err != nil {
+				log.Fatalf("Failed to parse rows event: %v", err)
+			}
+		}
 	}
 }
 
