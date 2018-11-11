@@ -9,7 +9,7 @@ as a slave and process binary log.
 // import "github.com/localhots/bocadillo/reader"
 
 reader, _ := reader.New("root@(127.0.0.1:3306)/testdb", slave.Config{
-    ServerID: 1000,               // Arbitrary unique ID
+	ServerID: 1000,               // Arbitrary unique ID
 	File:     "mysql-bin.000035", // Log file name
 	Offset:   4,                  // Log file offset
 })
@@ -34,7 +34,10 @@ for {
 
 ### WIP
 
-A fork of [go-sql-driver/mysql](https://github.com/go-sql-driver/mysql) is used
+This package is a work in progress and can't be considered production ready just
+yet.
+
+A fork of [go-sql-driver/mysql](https://github.com/localhots/mysql) is used
 to provide underlying connection and basic packet exchange.
 
 ### Licence
