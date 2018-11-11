@@ -1,11 +1,15 @@
 package binlog
 
 import (
+	"encoding/hex"
+	"errors"
 	"fmt"
+	"runtime/debug"
 	"time"
 
 	"github.com/localhots/bocadillo/mysql"
 	"github.com/localhots/bocadillo/tools"
+	"github.com/localhots/pretty"
 )
 
 // RowsEvent contains a Rows Event.
@@ -40,8 +44,26 @@ func (e *RowsEvent) PeekTableID(connBuff []byte, fd FormatDescription) uint64 {
 }
 
 // Decode decodes given buffer into a rows event event.
-func (e *RowsEvent) Decode(connBuff []byte, fd FormatDescription, td TableDescription) error {
-	// pretty.Println(data)
+func (e *RowsEvent) Decode(connBuff []byte, fd FormatDescription, td TableDescription) (err error) {
+	defer func() {
+		if errv := recover(); errv != nil {
+			tools.EnableDebug = true
+			tools.Debug("Recovered from panic in RowsEvent.Decode")
+			tools.Debug("Error:", errv)
+			tools.Debug("Format:", fd)
+			tools.Debug("Table:", td)
+			tools.Debug("Columns:")
+			for _, ctb := range td.ColumnTypes {
+				tools.Debug(" ", mysql.ColumnType(ctb).String())
+			}
+			tools.Debug("\nBuffer:")
+			tools.Debug(hex.Dump(connBuff))
+			tools.Debug("Stacktrace:")
+			debug.PrintStack()
+			err = errors.New(fmt.Sprint(errv))
+		}
+	}()
+
 	buf := tools.NewBuffer(connBuff)
 	idSize := fd.TableIDSize(e.Type)
 	if idSize == 6 {
@@ -65,22 +87,25 @@ func (e *RowsEvent) Decode(connBuff []byte, fd FormatDescription, td TableDescri
 		e.ColumnBitmap2 = buf.ReadStringVarLen(int(e.ColumnCount+7) / 8)
 	}
 
-	// pretty.Println(e.Type.String(), buf.Cur())
-
 	e.Rows = make([][]interface{}, 0)
-	for buf.More() {
+	for {
+		tools.Debug("\n\n=== PARSING ROW\n")
 		row, err := e.decodeRows(buf, td, e.ColumnBitmap1)
 		if err != nil {
 			return err
 		}
 		e.Rows = append(e.Rows, row)
 
-		if RowsEventHasSecondBitmap(e.Type) {
+		if RowsEventHasSecondBitmap(e.Type) { // && buf.More()
+			tools.Debug("===== SECOND BITMASK ROUND =====\n")
 			row, err := e.decodeRows(buf, td, e.ColumnBitmap2)
 			if err != nil {
 				return err
 			}
 			e.Rows = append(e.Rows, row)
+		}
+		if !buf.More() {
+			break
 		}
 	}
 	return nil
@@ -100,25 +125,32 @@ func (e *RowsEvent) decodeRows(buf *tools.Buffer, td TableDescription, bm []byte
 	row := make([]interface{}, e.ColumnCount)
 	for i := 0; i < int(e.ColumnCount); i++ {
 		if !isBitSet(bm, i) {
+			tools.Debugf("Skipped %s, meta %x, BIT NOT SET\n\n",
+				mysql.ColumnType(td.ColumnTypes[i]).String(), td.ColumnMeta[i],
+			)
 			continue
 		}
 
 		isNull := (uint32(nullBM[nullIdx/8]) >> uint32(nullIdx%8)) & 1
 		nullIdx++
 		if isNull > 0 {
+			tools.Debugf("Parsed %s, meta %x, NULL\n\n",
+				mysql.ColumnType(td.ColumnTypes[i]).String(), td.ColumnMeta[i],
+			)
 			row[i] = nil
 			continue
 		}
 
 		row[i] = e.decodeValue(buf, mysql.ColumnType(td.ColumnTypes[i]), td.ColumnMeta[i])
-		// fmt.Printf("Parsed %s, meta %x, value %++v\n",
-		// 	mysql.ColumnType(td.ColumnTypes[i]).String(), td.ColumnMeta[i], row[i],
-		// )
+		tools.Debugf("Parsed %s, meta %x, value %++v\n\n",
+			mysql.ColumnType(td.ColumnTypes[i]).String(), td.ColumnMeta[i], row[i],
+		)
 	}
 	return row, nil
 }
 
 func (e *RowsEvent) decodeValue(buf *tools.Buffer, ct mysql.ColumnType, meta uint16) interface{} {
+	tools.Debugf("-- PRE-PARSING %s, meta %x\n", ct.String(), meta)
 	var length int
 	if ct == mysql.ColumnTypeString {
 		if meta > 0xFF {
@@ -135,6 +167,8 @@ func (e *RowsEvent) decodeValue(buf *tools.Buffer, ct mysql.ColumnType, meta uin
 			length = int(meta)
 		}
 	}
+
+	tools.Debugf("-- PARSING %s, meta %x\n", ct.String(), meta)
 
 	switch ct {
 	case mysql.ColumnTypeNull:
@@ -215,11 +249,16 @@ func (e *RowsEvent) decodeValue(buf *tools.Buffer, ct mysql.ColumnType, meta uin
 	case mysql.ColumnTypeBit:
 		nbits := int(((meta >> 8) * 8) + (meta & 0xFF))
 		length = int(nbits+7) / 8
-		return mysql.DecodeBit(buf.Cur(), nbits, length)
+		v, n := mysql.DecodeBit(buf.Cur(), nbits, length)
+		buf.Skip(n)
+		return v
 	case mysql.ColumnTypeSet:
 		length = int(meta & 0xFF)
 		nbits := length * 8
-		return mysql.DecodeBit(buf.Cur(), nbits, length)
+		v, n := mysql.DecodeBit(buf.Cur(), nbits, length)
+		pretty.Println("Decoding set", buf.Cur(), nbits, length, "-->", v)
+		buf.Skip(n)
+		return v
 
 	// Stuff
 	case mysql.ColumnTypeEnum:

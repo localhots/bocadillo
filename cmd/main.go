@@ -1,9 +1,9 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -17,7 +17,6 @@ func main() {
 	offset := flag.Uint("offset", 0, "Log offset in bytes")
 	flag.Parse()
 
-	ctx := context.Background()
 	validate((*dsn != ""), "Database source name is not set")
 	validate((*id != 0), "Server ID is not set")
 	validate((*file != ""), "Binary log file is not set")
@@ -34,7 +33,7 @@ func main() {
 
 	reader, err := reader.NewReader(conn)
 	if err != nil {
-		log.Fatalf( "Failed to create reader: %v", err)
+		log.Fatalf("Failed to create reader: %v", err)
 	}
 
 	off := conf.Offset
@@ -45,7 +44,7 @@ func main() {
 			log.Fatalf("Failed to read event: %v", err)
 		}
 		ts := time.Unix(int64(evt.Header.Timestamp), 0).Format(time.RFC3339)
-		log.Printf("Event received: %s %d, %d\n", evt.Header.Type.String(), ts, off4	})
+		log.Printf("Event received: %s %s, %d\n", evt.Header.Type.String(), ts, off)
 		off = evt.Header.NextOffset
 	}
 }

@@ -17,10 +17,12 @@ type Reader struct {
 
 // Event ...
 type Event struct {
+	Format binlog.FormatDescription
 	Header binlog.EventHeader
-	Body   []byte
-	Table  *binlog.TableDescription
-	Rows   *binlog.RowsEvent
+	Buffer []byte
+
+	// Table is not empty for rows events
+	Table *binlog.TableDescription
 }
 
 // NewReader ...
@@ -47,10 +49,10 @@ func NewReader(conn *SlaveConn) (*Reader, error) {
 func (r *Reader) ReadEvent() (*Event, error) {
 	connBuff, err := r.conn.ReadPacket()
 	if err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "read next event")
 	}
 
-	var evt Event
+	evt := Event{Format: r.format}
 	if err := evt.Header.Decode(connBuff, r.format); err != nil {
 		return nil, errors.Annotate(err, "decode event header")
 	}
@@ -59,34 +61,36 @@ func (r *Reader) ReadEvent() (*Event, error) {
 		r.state.Offset = uint64(evt.Header.NextOffset)
 	}
 
-	evt.Body = connBuff[r.format.HeaderLen():]
-
+	evt.Buffer = connBuff[r.format.HeaderLen():]
 	csa := r.format.ServerDetails.ChecksumAlgorithm
 	if evt.Header.Type != binlog.EventTypeFormatDescription && csa == binlog.ChecksumAlgorithmCRC32 {
-		evt.Body = evt.Body[:len(evt.Body)-4]
+		// Remove trailing CRC32 checksum, we're not going to verify it
+		evt.Buffer = evt.Buffer[:len(evt.Buffer)-4]
 	}
-
-	// pretty.Println(h)
 
 	switch evt.Header.Type {
 	case binlog.EventTypeFormatDescription:
 		var fde binlog.FormatDescriptionEvent
-		if err = fde.Decode(evt.Body); err == nil {
-			r.format = fde.FormatDescription
+		err = fde.Decode(evt.Buffer)
+		if err != nil {
+			return nil, errors.Annotate(err, "decode format description event")
 		}
-		// pretty.Println(evt.Header.Type.String(), r.format)
+		r.format = fde.FormatDescription
+		evt.Format = fde.FormatDescription
 	case binlog.EventTypeRotate:
 		var re binlog.RotateEvent
-		if err = re.Decode(evt.Body, r.format); err == nil {
-			r.state = re.NextFile
+		err = re.Decode(evt.Buffer, r.format)
+		if err != nil {
+			return nil, errors.Annotate(err, "decode rotate event")
 		}
-		// pretty.Println(evt.Header.Type.String(), r.state)
+		r.state = re.NextFile
 	case binlog.EventTypeTableMap:
 		var tme binlog.TableMapEvent
-		if err = tme.Decode(evt.Body, r.format); err == nil {
-			r.tableMap[tme.TableID] = tme.TableDescription
+		err = tme.Decode(evt.Buffer, r.format)
+		if err != nil {
+			return nil, errors.Annotate(err, "decode table map event")
 		}
-		// pretty.Println(evt.Header.Type.String(), tm)
+		r.tableMap[tme.TableID] = tme.TableDescription
 	case binlog.EventTypeWriteRowsV0,
 		binlog.EventTypeWriteRowsV1,
 		binlog.EventTypeWriteRowsV2,
@@ -98,22 +102,18 @@ func (r *Reader) ReadEvent() (*Event, error) {
 		binlog.EventTypeDeleteRowsV2:
 
 		re := binlog.RowsEvent{Type: evt.Header.Type}
-		tableID := re.PeekTableID(evt.Body, r.format)
+		tableID := re.PeekTableID(evt.Buffer, r.format)
 		td, ok := r.tableMap[tableID]
 		if !ok {
 			return nil, errors.New("Unknown table ID")
 		}
-		if err = re.Decode(evt.Body, r.format, td); err != nil {
-			return nil, err
-		}
 		evt.Table = &td
-		evt.Rows = &re
+	case binlog.EventTypeQuery:
+		// Can be decoded by the receiver
 	case binlog.EventTypeXID:
-		// TODO: Add support
+		// Can be decoded by the receiver
 	case binlog.EventTypeGTID:
 		// TODO: Add support
-	case binlog.EventTypeQuery:
-		// TODO: Handle schema changes
 	}
 
 	return &evt, err

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/localhots/bocadillo/binlog"
 	"github.com/localhots/bocadillo/mysql"
 	"github.com/localhots/bocadillo/reader"
 )
@@ -199,12 +200,16 @@ func (s *testSuite) expectValue(t *testing.T, tbl *table, exp interface{}) {
 				return
 			}
 			if evt.Table != nil && evt.Table.TableName == tbl.name {
-				// pretty.Println(evt)
-				if len(evt.Rows.Rows) != 1 && len(evt.Rows.Rows[0]) != 1 {
-					panic("Expected one row with one value")
+				re := binlog.RowsEvent{Type: evt.Header.Type}
+				err := re.Decode(evt.Buffer, evt.Format, *evt.Table)
+				if err != nil {
+					t.Fatalf("Failed to decode rows event: %v", err)
+				}
+				if len(re.Rows) != 1 && len(re.Rows[0]) != 1 {
+					t.Fatal("Expected 1 row with 1 value")
 				}
 
-				out <- evt.Rows.Rows[0][0]
+				out <- re.Rows[0][0]
 				return
 			}
 		}
