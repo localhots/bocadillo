@@ -9,7 +9,6 @@ import (
 
 	"github.com/localhots/bocadillo/mysql"
 	"github.com/localhots/bocadillo/tools"
-	"github.com/localhots/pretty"
 )
 
 // RowsEvent contains a Rows Event.
@@ -253,16 +252,14 @@ func (e *RowsEvent) decodeValue(buf *tools.Buffer, ct mysql.ColumnType, meta uin
 		buf.Skip(n)
 		return v
 	case mysql.ColumnTypeSet:
-		length = int(meta & 0xFF)
 		nbits := length * 8
 		v, n := mysql.DecodeBit(buf.Cur(), nbits, length)
-		pretty.Println("Decoding set", buf.Cur(), nbits, length, "-->", v)
 		buf.Skip(n)
 		return v
 
 	// Stuff
 	case mysql.ColumnTypeEnum:
-		return buf.ReadVarLen64(int(meta & 0xFF))
+		return buf.ReadVarLen64(length)
 
 	// Unsupported
 	case mysql.ColumnTypeDecimal:

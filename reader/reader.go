@@ -56,7 +56,6 @@ func (r *Reader) ReadEvent() (*Event, error) {
 	if err := evt.Header.Decode(connBuff, r.format); err != nil {
 		return nil, errors.Annotate(err, "decode event header")
 	}
-
 	if evt.Header.NextOffset > 0 {
 		r.state.Offset = uint64(evt.Header.NextOffset)
 	}
@@ -71,26 +70,29 @@ func (r *Reader) ReadEvent() (*Event, error) {
 	switch evt.Header.Type {
 	case binlog.EventTypeFormatDescription:
 		var fde binlog.FormatDescriptionEvent
-		err = fde.Decode(evt.Buffer)
+		err := fde.Decode(evt.Buffer)
 		if err != nil {
 			return nil, errors.Annotate(err, "decode format description event")
 		}
 		r.format = fde.FormatDescription
 		evt.Format = fde.FormatDescription
+
 	case binlog.EventTypeRotate:
 		var re binlog.RotateEvent
-		err = re.Decode(evt.Buffer, r.format)
+		err := re.Decode(evt.Buffer, r.format)
 		if err != nil {
 			return nil, errors.Annotate(err, "decode rotate event")
 		}
 		r.state = re.NextFile
+
 	case binlog.EventTypeTableMap:
 		var tme binlog.TableMapEvent
-		err = tme.Decode(evt.Buffer, r.format)
+		err := tme.Decode(evt.Buffer, r.format)
 		if err != nil {
 			return nil, errors.Annotate(err, "decode table map event")
 		}
 		r.tableMap[tme.TableID] = tme.TableDescription
+
 	case binlog.EventTypeWriteRowsV0,
 		binlog.EventTypeWriteRowsV1,
 		binlog.EventTypeWriteRowsV2,
@@ -108,6 +110,7 @@ func (r *Reader) ReadEvent() (*Event, error) {
 			return nil, errors.New("Unknown table ID")
 		}
 		evt.Table = &td
+
 	case binlog.EventTypeQuery:
 		// Can be decoded by the receiver
 	case binlog.EventTypeXID:
