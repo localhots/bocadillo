@@ -155,6 +155,11 @@ func (c *Conn) SetVar(name, val string) error {
 	return c.conn.Exec(fmt.Sprintf("SET %s=%q", name, val))
 }
 
+// Close the connection.
+func (c *Conn) Close() error {
+	return c.conn.Close()
+}
+
 func (c *Conn) runCmd(data []byte) error {
 	err := c.conn.WritePacket(data)
 	if err != nil {

@@ -33,7 +33,9 @@ func New(dsn string, sc slave.Config) (*Reader, error) {
 		return nil, errors.Annotate(err, "establish slave connection")
 	}
 
-	r := &Reader{conn: conn}
+	r := &Reader{
+		conn: conn,
+	}
 	r.initTableMap()
 
 	if err := conn.DisableChecksum(); err != nil {
@@ -127,6 +129,11 @@ func (r *Reader) ReadEvent() (*Event, error) {
 	}
 
 	return &evt, err
+}
+
+// Close underlying database connection.
+func (r *Reader) Close() error {
+	return r.conn.Close()
 }
 
 func (r *Reader) initTableMap() {
