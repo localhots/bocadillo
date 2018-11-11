@@ -33,10 +33,8 @@ func New(dsn string, sc slave.Config) (*Reader, error) {
 		return nil, errors.Annotate(err, "establish slave connection")
 	}
 
-	r := &Reader{
-		conn:     conn,
-		tableMap: make(map[uint64]binlog.TableDescription),
-	}
+	r := &Reader{conn: conn}
+	r.initTableMap()
 
 	if err := conn.DisableChecksum(); err != nil {
 		return nil, errors.Annotate(err, "disable binlog checksum")
@@ -76,8 +74,7 @@ func (r *Reader) ReadEvent() (*Event, error) {
 	switch evt.Header.Type {
 	case binlog.EventTypeFormatDescription:
 		var fde binlog.FormatDescriptionEvent
-		err := fde.Decode(evt.Buffer)
-		if err != nil {
+		if err := fde.Decode(evt.Buffer); err != nil {
 			return nil, errors.Annotate(err, "decode format description event")
 		}
 		r.format = fde.FormatDescription
@@ -85,16 +82,14 @@ func (r *Reader) ReadEvent() (*Event, error) {
 
 	case binlog.EventTypeRotate:
 		var re binlog.RotateEvent
-		err := re.Decode(evt.Buffer, r.format)
-		if err != nil {
+		if err := re.Decode(evt.Buffer, r.format); err != nil {
 			return nil, errors.Annotate(err, "decode rotate event")
 		}
 		r.state = re.NextFile
 
 	case binlog.EventTypeTableMap:
 		var tme binlog.TableMapEvent
-		err := tme.Decode(evt.Buffer, r.format)
-		if err != nil {
+		if err := tme.Decode(evt.Buffer, r.format); err != nil {
 			return nil, errors.Annotate(err, "decode table map event")
 		}
 		r.tableMap[tme.TableID] = tme.TableDescription
@@ -110,13 +105,19 @@ func (r *Reader) ReadEvent() (*Event, error) {
 		binlog.EventTypeDeleteRowsV2:
 
 		re := binlog.RowsEvent{Type: evt.Header.Type}
-		tableID := re.PeekTableID(evt.Buffer, r.format)
+		tableID, flags := re.PeekTableIDAndFlags(evt.Buffer, r.format)
 		td, ok := r.tableMap[tableID]
 		if !ok {
 			return nil, errors.New("Unknown table ID")
 		}
 		evt.Table = &td
 
+		// Throttle table map clearing. This flag could be part of every single
+		// rows event
+		if binlog.RowsFlagEndOfStatement&flags > 0 && len(r.tableMap) > 100 {
+			// Clear table map
+			r.initTableMap()
+		}
 	case binlog.EventTypeQuery:
 		// Can be decoded by the receiver
 	case binlog.EventTypeXID:
@@ -126,6 +127,10 @@ func (r *Reader) ReadEvent() (*Event, error) {
 	}
 
 	return &evt, err
+}
+
+func (r *Reader) initTableMap() {
+	r.tableMap = make(map[uint64]binlog.TableDescription)
 }
 
 // DecodeRows decodes buffer into a rows event.
