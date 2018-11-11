@@ -11,6 +11,7 @@ import (
 
 	"github.com/localhots/bocadillo/binlog"
 	"github.com/localhots/bocadillo/reader"
+	"github.com/localhots/bocadillo/reader/slave"
 )
 
 var suite *testSuite
@@ -30,12 +31,7 @@ func TestMain(m *testing.M) {
 		conf.Offset = uint32(pos.Offset)
 	}
 
-	slaveConn, err := reader.Connect(dsn, conf)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	rdr, err := reader.NewReader(slaveConn)
+	rdr, err := reader.New(dsn, conf)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -50,7 +46,7 @@ func TestMain(m *testing.M) {
 	os.Exit(exitCode)
 }
 
-func getConfig() (dsn string, conf reader.Config) {
+func getConfig() (dsn string, conf slave.Config) {
 	envOrDefault := func(name, def string) string {
 		if val := os.Getenv(name); val != "" {
 			return val

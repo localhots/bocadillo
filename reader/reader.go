@@ -4,18 +4,19 @@ import (
 	"github.com/juju/errors"
 	"github.com/localhots/bocadillo/binlog"
 	"github.com/localhots/bocadillo/reader/schema"
+	"github.com/localhots/bocadillo/reader/slave"
 )
 
-// Reader ...
+// Reader is a binary log reader.
 type Reader struct {
-	conn     *SlaveConn
+	conn     *slave.Conn
 	state    binlog.Position
 	format   binlog.FormatDescription
 	tableMap map[uint64]binlog.TableDescription
 	schema   *schema.Schema
 }
 
-// Event ...
+// Event contains binlog event details.
 type Event struct {
 	Format binlog.FormatDescription
 	Header binlog.EventHeader
@@ -25,8 +26,13 @@ type Event struct {
 	Table *binlog.TableDescription
 }
 
-// NewReader ...
-func NewReader(conn *SlaveConn) (*Reader, error) {
+// New creates a new binary log reader.
+func New(dsn string, sc slave.Config) (*Reader, error) {
+	conn, err := slave.Connect(dsn, sc)
+	if err != nil {
+		return nil, errors.Annotate(err, "establish slave connection")
+	}
+
 	r := &Reader{
 		conn:     conn,
 		tableMap: make(map[uint64]binlog.TableDescription),
@@ -45,7 +51,7 @@ func NewReader(conn *SlaveConn) (*Reader, error) {
 	return r, nil
 }
 
-// ReadEvent ...
+// ReadEvent reads next event from the binary log.
 func (r *Reader) ReadEvent() (*Event, error) {
 	connBuff, err := r.conn.ReadPacket()
 	if err != nil {
