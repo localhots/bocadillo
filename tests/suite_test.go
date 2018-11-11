@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/localhots/bocadillo/binlog"
 	"github.com/localhots/bocadillo/mysql"
 	"github.com/localhots/bocadillo/reader"
 )
@@ -200,8 +199,7 @@ func (s *testSuite) expectValue(t *testing.T, tbl *table, exp interface{}) {
 				return
 			}
 			if evt.Table != nil && evt.Table.TableName == tbl.name {
-				re := binlog.RowsEvent{Type: evt.Header.Type}
-				err := re.Decode(evt.Buffer, evt.Format, *evt.Table)
+				re, err := evt.DecodeRows()
 				if err != nil {
 					t.Fatalf("Failed to decode rows event: %v", err)
 				}
