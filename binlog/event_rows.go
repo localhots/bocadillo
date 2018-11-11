@@ -15,7 +15,7 @@ import (
 type RowsEvent struct {
 	Type          EventType
 	TableID       uint64
-	Flags         uint16
+	Flags         RowsFlag
 	ExtraData     []byte
 	ColumnCount   uint64
 	ColumnBitmap1 []byte
@@ -23,23 +23,25 @@ type RowsEvent struct {
 	Rows          [][]interface{}
 }
 
-type rowsFlag uint16
+// RowsFlag is bitmask of flags.
+type RowsFlag uint16
 
 const (
-	rowsFlagEndOfStatement     rowsFlag = 0x0001
-	rowsFlagNoForeignKeyChecks rowsFlag = 0x0002
-	rowsFlagNoUniqueKeyChecks  rowsFlag = 0x0004
-	rowsFlagRowHasColumns      rowsFlag = 0x0008
+	// RowsFlagEndOfStatement is used to clear old table mappings.
+	RowsFlagEndOfStatement     RowsFlag = 0x0001
+	rowsFlagNoForeignKeyChecks RowsFlag = 0x0002
+	rowsFlagNoUniqueKeyChecks  RowsFlag = 0x0004
+	rowsFlagRowHasColumns      RowsFlag = 0x0008
 
 	freeTableMapID = 0x00FFFFFF
 )
 
-// PeekTableID returns table ID without decoding whole event.
-func (e *RowsEvent) PeekTableID(connBuff []byte, fd FormatDescription) uint64 {
+// PeekTableIDAndFlags returns table ID and flags without decoding whole event.
+func (e *RowsEvent) PeekTableIDAndFlags(connBuff []byte, fd FormatDescription) (uint64, RowsFlag) {
 	if fd.TableIDSize(e.Type) == 6 {
-		return mysql.DecodeUint48(connBuff)
+		return mysql.DecodeUint48(connBuff), RowsFlag(mysql.DecodeUint16(connBuff[6:]))
 	}
-	return uint64(mysql.DecodeUint32(connBuff))
+	return uint64(mysql.DecodeUint32(connBuff)), RowsFlag(mysql.DecodeUint16(connBuff[4:]))
 }
 
 // Decode decodes given buffer into a rows event event.
@@ -71,7 +73,7 @@ func (e *RowsEvent) Decode(connBuff []byte, fd FormatDescription, td TableDescri
 		e.TableID = uint64(buf.ReadUint32())
 	}
 
-	e.Flags = buf.ReadUint16()
+	e.Flags = RowsFlag(buf.ReadUint16())
 
 	if RowsEventHasExtraData(e.Type) {
 		// Extra data length is part of extra data, deduct 2 bytes as they
