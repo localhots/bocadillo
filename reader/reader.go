@@ -3,7 +3,6 @@ package reader
 import (
 	"github.com/juju/errors"
 	"github.com/localhots/bocadillo/binlog"
-	"github.com/localhots/bocadillo/reader/schema"
 	"github.com/localhots/bocadillo/reader/slave"
 )
 
@@ -13,7 +12,6 @@ type Reader struct {
 	state    binlog.Position
 	format   binlog.FormatDescription
 	tableMap map[uint64]binlog.TableDescription
-	schema   *schema.Schema
 }
 
 // Event contains binlog event details.
