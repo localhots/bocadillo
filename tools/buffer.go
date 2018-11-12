@@ -37,7 +37,7 @@ func (b *Buffer) Read(n int) []byte {
 	b.pos += n
 
 	Debugf("Read %d bytes: %X\n", n, b.data[b.pos-n:b.pos])
-	return b.data[b.pos-n:]
+	return b.data[b.pos-n : b.pos]
 }
 
 // Cur returns remaining unread buffer.

@@ -24,8 +24,16 @@ func (e *QueryEvent) Decode(connBuff []byte) {
 	schemaLen := int(buf.ReadUint8())
 	e.ErrorCode = buf.ReadUint16()
 	statusVarLen := int(buf.ReadUint8())
+
+	e.StatusVars = make([]byte, statusVarLen)
 	copy(e.StatusVars, buf.Read(statusVarLen))
-	copy(e.Schema, buf.Read(schemaLen))
+
+	// FIXME: This is not by the spec but seem to work
+	// It could be there's an error somewhere and this byte skipping corrects it
 	buf.Skip(1) // Always 0x00
-	copy(e.Query, buf.Cur())
+	e.Schema = make([]byte, schemaLen)
+	copy(e.Schema, buf.Read(schemaLen))
+
+	buf.Skip(1) // Always 0x00
+	e.Query = buf.Cur()
 }
