@@ -2,25 +2,26 @@ package schema
 
 import (
 	"database/sql"
+	"regexp"
 	"strings"
 )
 
-// SchemaManager maintains table schemas.
-type SchemaManager struct {
+// Manager maintains table schemas.
+type Manager struct {
 	Schema *Schema
 	db     *sql.DB
 }
 
 // NewManager creates a new schema manager.
-func NewManager(db *sql.DB) *SchemaManager {
-	return &SchemaManager{
+func NewManager(db *sql.DB) *Manager {
+	return &Manager{
 		Schema: NewSchema(),
 		db:     db,
 	}
 }
 
 // Manage adds given tables to a list of managed tables and updates its details.
-func (m *SchemaManager) Manage(database, table string) error {
+func (m *Manager) Manage(database, table string) error {
 	cols, err := m.tableColumns(database, table)
 	if err != nil {
 		return err
@@ -31,20 +32,16 @@ func (m *SchemaManager) Manage(database, table string) error {
 }
 
 // ProcessQuery accepts an SQL query and updates schema if required.
-func (m *SchemaManager) ProcessQuery(query string) error {
-	if strings.HasPrefix(query, "ALTER TABLE") {
-		for database, tables := range m.Schema.tables {
-			for table := range tables {
-				if err := m.Manage(database, table); err != nil {
-					return err
-				}
-			}
+func (m *Manager) ProcessQuery(database, query string) error {
+	if tableName, ok := changedTable(query); !ok {
+		if tbl := m.Schema.Table(database, tableName); tbl != nil {
+			return m.Manage(database, tableName)
 		}
 	}
 	return nil
 }
 
-func (m *SchemaManager) tableColumns(database, table string) ([]Column, error) {
+func (m *Manager) tableColumns(database, table string) ([]Column, error) {
 	rows, err := m.db.Query(`
 		SELECT COLUMN_NAME, COLUMN_TYPE 
 		FROM INFORMATION_SCHEMA.COLUMNS 
@@ -70,4 +67,14 @@ func (m *SchemaManager) tableColumns(database, table string) ([]Column, error) {
 		cols = append(cols, col)
 	}
 	return cols, nil
+}
+
+var alterRegexp = regexp.MustCompile(`(?im)^alter[\s\t\n]+table[\s\t\n]+` + "`" + `?([a-z0-9_]+)`)
+
+func changedTable(query string) (string, bool) {
+	m := alterRegexp.FindAllStringSubmatch(query, -1)
+	if len(m) > 0 {
+		return m[0][1], true
+	}
+	return "", false
 }
