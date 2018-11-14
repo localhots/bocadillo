@@ -67,7 +67,7 @@ func (r *Reader) ReadEvent() (*Event, error) {
 		return nil, errors.Annotate(err, "read next event")
 	}
 
-	evt := Event{Format: r.format}
+	evt := Event{Format: r.format, Offset: r.state.Offset}
 	if err := evt.Header.Decode(connBuff, r.format); err != nil {
 		return nil, errors.Annotate(err, "decode event header")
 	}
