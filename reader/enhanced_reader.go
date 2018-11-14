@@ -4,26 +4,28 @@ import (
 	"context"
 	"database/sql"
 
+	_ "github.com/localhots/mysql" // MySQL driver
+
 	"github.com/juju/errors"
 	"github.com/localhots/bocadillo/binlog"
 	"github.com/localhots/bocadillo/mysql"
 	"github.com/localhots/bocadillo/reader/schema"
 	"github.com/localhots/bocadillo/reader/slave"
-	_ "github.com/localhots/mysql" // MySQL driver
 )
 
 // EnhancedReader is an extended version of the reader that maintains schema
 // details to add column names and signed integers support.
 type EnhancedReader struct {
 	reader    *Reader
+	safepoint binlog.Position
 	schemaMgr *schema.Manager
 }
 
 // EnhancedRowsEvent ...
 type EnhancedRowsEvent struct {
-	Type  binlog.EventType
-	Table binlog.TableDescription
-	Rows  []map[string]interface{}
+	Header binlog.EventHeader
+	Table  binlog.TableDescription
+	Rows   []map[string]interface{}
 }
 
 // NewEnhanced creates a new enhanced binary log reader.
@@ -41,6 +43,7 @@ func NewEnhanced(dsn string, sc slave.Config) (*EnhancedReader, error) {
 	return &EnhancedReader{
 		reader:    r,
 		schemaMgr: schema.NewManager(conn),
+		safepoint: r.state,
 	}, nil
 }
 
@@ -121,9 +124,9 @@ func (r *EnhancedReader) nextRowsEvent() (*EnhancedRowsEvent, error) {
 		}
 
 		ere := EnhancedRowsEvent{
-			Type:  re.Type,
-			Table: *evt.Table,
-			Rows:  make([]map[string]interface{}, len(re.Rows)),
+			Header: evt.Header,
+			Table:  *evt.Table,
+			Rows:   make([]map[string]interface{}, len(re.Rows)),
 		}
 		for i, row := range re.Rows {
 			erow := make(map[string]interface{}, len(row))
@@ -145,9 +148,24 @@ func (r *EnhancedReader) nextRowsEvent() (*EnhancedRowsEvent, error) {
 	}
 }
 
+func (r *EnhancedReader) processEvent(evt Event) {
+	switch evt.Header.Type {
+	case binlog.EventTypeFormatDescription, binlog.EventTypeTableMap, binlog.EventTypeXID:
+		r.safepoint.Offset = evt.Offset
+	case binlog.EventTypeRotate:
+		r.safepoint = r.reader.state
+	}
+}
+
 // State returns current position in the binary log.
 func (r *EnhancedReader) State() binlog.Position {
 	return r.reader.state
+}
+
+// Safepoint returns last encountered position that is considered safe to start
+// with.
+func (r *EnhancedReader) Safepoint() binlog.Position {
+	return r.safepoint
 }
 
 // Close underlying database connection.

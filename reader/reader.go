@@ -19,10 +19,17 @@ type Event struct {
 	Format binlog.FormatDescription
 	Header binlog.EventHeader
 	Buffer []byte
+	Offset uint64
 
 	// Table is not empty for rows events
 	Table *binlog.TableDescription
 }
+
+var (
+	// ErrUnknownTableID is returned when a table ID from a rows event is
+	// missing in the table map index.
+	ErrUnknownTableID = errors.New("Unknown table ID")
+)
 
 // New creates a new binary log reader.
 func New(dsn string, sc slave.Config) (*Reader, error) {
@@ -112,7 +119,7 @@ func (r *Reader) ReadEvent() (*Event, error) {
 		tableID, flags := re.PeekTableIDAndFlags(evt.Buffer, r.format)
 		td, ok := r.tableMap[tableID]
 		if !ok {
-			return nil, errors.New("Unknown table ID")
+			return nil, ErrUnknownTableID
 		}
 		evt.Table = &td
 
