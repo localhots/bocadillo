@@ -28,15 +28,12 @@ func NewCommandBuffer(size int) *Buffer {
 
 // Skip advances the cursor by N bytes.
 func (b *Buffer) Skip(n int) {
-	Debugf("Skipped %d bytes: %X\n", n, b.data[b.pos:b.pos+n])
 	b.pos += n
 }
 
 // Read returns next N bytes and advances the cursor.
 func (b *Buffer) Read(n int) []byte {
 	b.pos += n
-
-	Debugf("Read %d bytes: %X\n", n, b.data[b.pos-n:b.pos])
 	return b.data[b.pos-n : b.pos]
 }
 
@@ -47,7 +44,6 @@ func (b *Buffer) Cur() []byte {
 
 // More returns true if there's more to read.
 func (b *Buffer) More() bool {
-	Debug("*** BUFFER BOUNDS CHECK len:", len(b.data), "pos:", b.pos)
 	return b.pos < len(b.data)-1
 }
 

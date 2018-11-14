@@ -48,18 +48,17 @@ func (e *RowsEvent) PeekTableIDAndFlags(connBuff []byte, fd FormatDescription) (
 func (e *RowsEvent) Decode(connBuff []byte, fd FormatDescription, td TableDescription) (err error) {
 	defer func() {
 		if errv := recover(); errv != nil {
-			tools.EnableDebug = true
-			tools.Debug("Recovered from panic in RowsEvent.Decode")
-			tools.Debug("Error:", errv)
-			tools.Debug("Format:", fd)
-			tools.Debug("Table:", td)
-			tools.Debug("Columns:")
+			fmt.Println("Recovered from panic in RowsEvent.Decode")
+			fmt.Println("Error:", errv)
+			fmt.Println("Format:", fd)
+			fmt.Println("Table:", td)
+			fmt.Println("Columns:")
 			for _, ctb := range td.ColumnTypes {
-				tools.Debug(" ", mysql.ColumnType(ctb).String())
+				fmt.Println(" ", mysql.ColumnType(ctb).String())
 			}
-			tools.Debug("\nBuffer:")
-			tools.Debug(hex.Dump(connBuff))
-			tools.Debug("Stacktrace:")
+			fmt.Println("\nBuffer:")
+			fmt.Println(hex.Dump(connBuff))
+			fmt.Println("Stacktrace:")
 			debug.PrintStack()
 			err = errors.New(fmt.Sprint(errv))
 		}
