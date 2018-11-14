@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	_ "github.com/localhots/mysql" // MySQL driver
+	_ "github.com/go-sql-driver/mysql" // MySQL driver
 
 	"github.com/juju/errors"
 	"github.com/localhots/bocadillo/binlog"

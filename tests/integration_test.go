@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"testing"
 
-	_ "github.com/localhots/mysql"
+	_ "github.com/go-sql-driver/mysql"
 
 	"github.com/localhots/bocadillo/binlog"
 	"github.com/localhots/bocadillo/reader"
