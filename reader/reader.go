@@ -1,6 +1,8 @@
 package reader
 
 import (
+	"context"
+
 	"github.com/juju/errors"
 	"github.com/localhots/bocadillo/binlog"
 	"github.com/localhots/bocadillo/reader/slave"
@@ -61,8 +63,8 @@ func New(dsn string, sc slave.Config) (*Reader, error) {
 }
 
 // ReadEvent reads next event from the binary log.
-func (r *Reader) ReadEvent() (*Event, error) {
-	connBuff, err := r.conn.ReadPacket()
+func (r *Reader) ReadEvent(ctx context.Context) (*Event, error) {
+	connBuff, err := r.conn.ReadPacket(ctx)
 	if err != nil {
 		return nil, errors.Annotate(err, "read next event")
 	}

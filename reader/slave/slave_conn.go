@@ -1,6 +1,7 @@
 package slave
 
 import (
+	"context"
 	"database/sql/driver"
 	"fmt"
 	"io"
@@ -65,8 +66,8 @@ func Connect(dsn string, conf Config) (*Conn, error) {
 
 // ReadPacket reads next packet from the server and processes the first status
 // byte.
-func (c *Conn) ReadPacket() ([]byte, error) {
-	data, err := c.conn.ReadPacket()
+func (c *Conn) ReadPacket(ctx context.Context) ([]byte, error) {
+	data, err := c.conn.ReadPacket(ctx)
 	if err != nil {
 		return nil, err
 	}
