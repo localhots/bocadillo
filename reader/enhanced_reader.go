@@ -59,8 +59,8 @@ func (r *EnhancedReader) WhitelistTables(database string, tables ...string) erro
 }
 
 // ReadEvent reads next event from the binary log.
-func (r *EnhancedReader) ReadEvent() (*Event, error) {
-	evt, err := r.reader.ReadEvent()
+func (r *EnhancedReader) ReadEvent(ctx context.Context) (*Event, error) {
+	evt, err := r.reader.ReadEvent(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -78,30 +78,8 @@ func (r *EnhancedReader) ReadEvent() (*Event, error) {
 // NextRowsEvent returns the next rows event for a whitelisted table. It blocks
 // until next event is received or context is cancelled.
 func (r *EnhancedReader) NextRowsEvent(ctx context.Context) (*EnhancedRowsEvent, error) {
-	evtch := make(chan *EnhancedRowsEvent)
-	errch := make(chan error)
-	go func() {
-		evt, err := r.nextRowsEvent()
-		if err != nil {
-			errch <- err
-		} else {
-			evtch <- evt
-		}
-	}()
-
-	select {
-	case evt := <-evtch:
-		return evt, nil
-	case err := <-errch:
-		return nil, err
-	case <-ctx.Done():
-		return nil, nil
-	}
-}
-
-func (r *EnhancedReader) nextRowsEvent() (*EnhancedRowsEvent, error) {
 	for {
-		evt, err := r.reader.ReadEvent()
+		evt, err := r.reader.ReadEvent(ctx)
 		if err != nil {
 			return nil, err
 		}
