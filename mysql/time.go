@@ -7,6 +7,9 @@ import (
 	"time"
 )
 
+// Timezone is set for decoded datetime values.
+var Timezone = time.UTC
+
 // DecodeYear ...
 func DecodeYear(v uint8) uint16 {
 	return uint16(v) + 1900
@@ -66,7 +69,8 @@ func DecodeDatetime(v uint64) string {
 		int((t%10000)/100),
 		int(t%100),
 		0,
-		time.UTC)}.String()
+		Timezone,
+	)}.String()
 }
 
 // DecodeDatetime2 ...
@@ -113,7 +117,7 @@ func DecodeDatetime2(data []byte, dec uint16) (string, int) {
 	minute := int((hms >> 6) % (1 << 6))
 	hour := int((hms >> 12))
 
-	return FracTime{time.Date(year, time.Month(month), day, hour, minute, second, int(frac*1000), time.UTC), int(dec)}.String(), n
+	return FracTime{time.Date(year, time.Month(month), day, hour, minute, second, int(frac*1000), Timezone), int(dec)}.String(), n
 }
 
 // DecodeTime2 ...
