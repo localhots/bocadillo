@@ -2,6 +2,7 @@ package tests
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -201,9 +202,10 @@ func (s *testSuite) insertAndCompareExp(t *testing.T, tbl *table, vals, exps []i
 func (s *testSuite) expectValue(t *testing.T, tbl *table, exp []interface{}) {
 	t.Helper()
 	out := make(chan []interface{})
+	ctx := context.Background()
 	go func() {
 		for {
-			evt, err := suite.reader.ReadEvent()
+			evt, err := suite.reader.ReadEvent(ctx)
 			if err != nil {
 				t.Errorf("Failed to read event: %v", err)
 				return
