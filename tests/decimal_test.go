@@ -19,8 +19,8 @@ func TestDecimal(t *testing.T) {
 			"99.9",
 		},
 		"6,2": {
-			"0.00",
-			"1.00",
+			"0.0",
+			"1.0",
 			"1.33",
 			"10.16",
 			"620.99",
@@ -28,18 +28,17 @@ func TestDecimal(t *testing.T) {
 			"9999.99",
 		},
 		"10,4": {
-			"0.0000",
+			"0.0",
 			"1.0001",
 			"1.3301",
-			"10.1600",
+			"10.16",
 			"620.9999",
 			"500000.0001",
 			"999999.9999",
 		},
 		"30,10": {
-			// NOTE: At certain length there's undesired zero fill :/
-			"0000000000000000000.0000000000",
-			"0000000000000000001.0000000001",
+			"0.0",
+			"1.0000000001",
 			"99999999999999999999.9999999999",
 		},
 	}
@@ -51,11 +50,11 @@ func TestDecimal(t *testing.T) {
 
 			for _, v := range vals {
 				t.Run(v, func(t *testing.T) {
-					suite.insertAndCompare(t, tbl, v)
+					suite.insertAndCompare(t, tbl, mysql.NewDecimal(v))
 				})
 				if !strings.HasPrefix(v, "0") {
 					t.Run("-"+v, func(t *testing.T) {
-						suite.insertAndCompare(t, tbl, "-"+v)
+						suite.insertAndCompare(t, tbl, mysql.NewDecimal("-"+v))
 					})
 				}
 			}

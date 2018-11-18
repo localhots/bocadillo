@@ -2,4 +2,4 @@ install:
 	dep ensure
 
 test:
-	go test -v ./tests
+	go test -v ./{mysql,tests}
