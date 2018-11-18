@@ -202,10 +202,10 @@ func (t FracTime) String() string {
 
 func formatZeroTime(frac int, dec int) string {
 	if dec == 0 {
-		return "0000-00-00 00:00:00"
+		return "0000-00-00T00:00:00Z"
 	}
 
-	s := fmt.Sprintf("0000-00-00 00:00:00.%06d", frac)
+	s := fmt.Sprintf("0000-00-00T00:00:00.%06dZ", frac)
 
 	// dec must < 6, if frac is 924000, but dec is 3, we must output 924 here.
 	return s[0 : len(s)-(6-dec)]
@@ -213,9 +213,9 @@ func formatZeroTime(frac int, dec int) string {
 
 func init() {
 	fracTimeFormat = make([]string, 7)
-	fracTimeFormat[0] = "2006-01-02 15:04:05"
+	fracTimeFormat[0] = "2006-01-02T15:04:05Z"
 
 	for i := 1; i <= 6; i++ {
-		fracTimeFormat[i] = fmt.Sprintf("2006-01-02 15:04:05.%s", strings.Repeat("0", i))
+		fracTimeFormat[i] = fmt.Sprintf("2006-01-02T15:04:05.%sZ", strings.Repeat("0", i))
 	}
 }
