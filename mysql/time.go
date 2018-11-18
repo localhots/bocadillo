@@ -3,7 +3,6 @@ package mysql
 import (
 	"encoding/binary"
 	"fmt"
-	"strings"
 	"time"
 )
 
@@ -189,14 +188,29 @@ func DecodeTime2(data []byte, dec uint16) (string, int) {
 }
 
 var (
-	fracTimeFormat []string
+	fracTimeFormat = [...]string{
+		"2006-01-02T15:04:05Z",
+		"2006-01-02T15:04:05.0Z",
+		"2006-01-02T15:04:05.00Z",
+		"2006-01-02T15:04:05.000Z",
+		"2006-01-02T15:04:05.0000Z",
+		"2006-01-02T15:04:05.00000Z",
+		"2006-01-02T15:04:05.000000Z",
+	}
+	zeroTimes = [...]string{
+		"0000-00-00T00:00:00Z",
+		"0000-00-00T00:00:00.0Z",
+		"0000-00-00T00:00:00.00Z",
+		"0000-00-00T00:00:00.000Z",
+		"0000-00-00T00:00:00.0000Z",
+		"0000-00-00T00:00:00.00000Z",
+		"0000-00-00T00:00:00.000000Z",
+	}
 )
 
 // FracTime is a help structure wrapping Golang Time.
 type FracTime struct {
 	time.Time
-
-	// Dec must in [0, 6]
 	Dec int
 }
 
@@ -205,21 +219,6 @@ func (t FracTime) String() string {
 }
 
 func formatZeroTime(frac int, dec int) string {
-	if dec == 0 {
-		return "0000-00-00T00:00:00Z"
-	}
-
-	s := fmt.Sprintf("0000-00-00T00:00:00.%06dZ", frac)
-
-	// dec must < 6, if frac is 924000, but dec is 3, we must output 924 here.
-	return s[0 : len(s)-(6-dec)]
-}
-
-func init() {
-	fracTimeFormat = make([]string, 7)
-	fracTimeFormat[0] = "2006-01-02T15:04:05Z"
-
-	for i := 1; i <= 6; i++ {
-		fracTimeFormat[i] = fmt.Sprintf("2006-01-02T15:04:05.%sZ", strings.Repeat("0", i))
-	}
+	// We are going to ignore frac/dec distinction here
+	return zeroTimes[dec]
 }
