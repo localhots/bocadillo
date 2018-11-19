@@ -2,7 +2,8 @@ package binlog
 
 import "github.com/localhots/bocadillo/tools"
 
-// Position ...
+// Position is a pair of log file name and a binary offset in it that is used to
+// represent the beginning of the event description.
 type Position struct {
 	File   string
 	Offset uint64

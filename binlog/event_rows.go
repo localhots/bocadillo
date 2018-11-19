@@ -28,12 +28,7 @@ type RowsFlag uint16
 
 const (
 	// RowsFlagEndOfStatement is used to clear old table mappings.
-	RowsFlagEndOfStatement     RowsFlag = 0x0001
-	rowsFlagNoForeignKeyChecks RowsFlag = 0x0002
-	rowsFlagNoUniqueKeyChecks  RowsFlag = 0x0004
-	rowsFlagRowHasColumns      RowsFlag = 0x0008
-
-	freeTableMapID = 0x00FFFFFF
+	RowsFlagEndOfStatement RowsFlag = 0x0001
 )
 
 // PeekTableIDAndFlags returns table ID and flags without decoding whole event.
@@ -229,7 +224,7 @@ func (e *RowsEvent) decodeValue(buf *tools.Buffer, ct mysql.ColumnType, meta uin
 	case mysql.ColumnTypeLongblob:
 		return buf.ReadStringVarEnc(4)
 
-	// Bits
+	// Other
 	case mysql.ColumnTypeBit:
 		nbits := int(((meta >> 8) * 8) + (meta & 0xFF))
 		length = int(nbits+7) / 8
@@ -241,8 +236,6 @@ func (e *RowsEvent) decodeValue(buf *tools.Buffer, ct mysql.ColumnType, meta uin
 		v, n := mysql.DecodeBit(buf.Cur(), nbits, length)
 		buf.Skip(n)
 		return v
-
-	// Stuff
 	case mysql.ColumnTypeEnum:
 		return buf.ReadVarLen64(length)
 

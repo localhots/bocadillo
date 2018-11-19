@@ -23,12 +23,12 @@ const (
 	ColumnTypeTime       ColumnType = 0x0b
 	ColumnTypeDatetime   ColumnType = 0x0c
 	ColumnTypeYear       ColumnType = 0x0d
-	ColumnTypeNewDate    ColumnType = 0x0e // Internal
+	ColumnTypeNewDate    ColumnType = 0x0e
 	ColumnTypeVarchar    ColumnType = 0x0f
 	ColumnTypeBit        ColumnType = 0x10
-	ColumnTypeTimestamp2 ColumnType = 0x11 // Internal
-	ColumnTypeDatetime2  ColumnType = 0x12 // Internal
-	ColumnTypeTime2      ColumnType = 0x13 // Internal
+	ColumnTypeTimestamp2 ColumnType = 0x11
+	ColumnTypeDatetime2  ColumnType = 0x12
+	ColumnTypeTime2      ColumnType = 0x13
 
 	ColumnTypeJSON       ColumnType = 0xF5
 	ColumnTypeNewDecimal ColumnType = 0xF6

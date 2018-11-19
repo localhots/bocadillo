@@ -54,7 +54,7 @@ const (
 func (e *FormatDescriptionEvent) Decode(data []byte) error {
 	buf := tools.NewBuffer(data)
 	e.Version = buf.ReadUint16()
-	e.ServerVersion = trimString(buf.ReadStringVarLen(50))
+	e.ServerVersion = trimStringEOF(buf.ReadStringVarLen(50))
 	e.CreateTimestamp = buf.ReadUint32()
 	e.EventHeaderLength = buf.ReadUint8()
 	e.EventTypeHeaderLengths = buf.ReadStringEOF()
@@ -64,9 +64,6 @@ func (e *FormatDescriptionEvent) Decode(data []byte) error {
 		ChecksumAlgorithm: ChecksumAlgorithmUndefined,
 	}
 	if e.ServerDetails.Version > 50601 {
-		// Last 5 bytes are:
-		// [1] Checksum algorithm
-		// [4] Checksum
 		e.ServerDetails.ChecksumAlgorithm = ChecksumAlgorithm(data[len(data)-5])
 		e.EventTypeHeaderLengths = e.EventTypeHeaderLengths[:len(e.EventTypeHeaderLengths)-5]
 	}
@@ -127,7 +124,7 @@ func parseVersionNumber(v string) int {
 	return major*10000 + minor*100 + patch
 }
 
-func trimString(str []byte) string {
+func trimStringEOF(str []byte) string {
 	for i, c := range str {
 		if c == 0x00 {
 			return string(str[:i])
