@@ -103,10 +103,17 @@ func DecodeTime2(data []byte, dec uint16) (string, int) {
 	return fmt.Sprintf("%s%02d:%02d:%02d", sign, hour, minute, second), n
 }
 
+// DecodeTimestamp decodes TIMESTAMP value.
+// Spec: https://dev.mysql.com/doc/refman/8.0/en/datetime.html
+// Implementation borrowed from https://github.com/siddontang/go-mysql/
+func DecodeTimestamp(data []byte, dec uint16) (time.Time, int) {
+	return time.Unix(int64(DecodeUint32(data)), 0), 4
+}
+
 // DecodeTimestamp2 decodes TIMESTAMP v2 value.
 // Spec: https://dev.mysql.com/doc/refman/8.0/en/datetime.html
 // Implementation borrowed from https://github.com/siddontang/go-mysql/
-func DecodeTimestamp2(data []byte, dec uint16) (string, int) {
+func DecodeTimestamp2(data []byte, dec uint16) (time.Time, int) {
 	// get timestamp binary length
 	n := int(4 + (dec+1)/2)
 	sec := int64(binary.BigEndian.Uint32(data[0:4]))
@@ -121,18 +128,18 @@ func DecodeTimestamp2(data []byte, dec uint16) (string, int) {
 	}
 
 	if sec == 0 {
-		return formatZeroTime(int(usec), int(dec)), n
+		return time.Time{}, n
 	}
 
-	return FracTime{time.Unix(sec, usec*1000), int(dec)}.String(), n
+	return time.Unix(sec, usec*1000), n
 }
 
 // DecodeDatetime decodes DATETIME value.
 // Spec: https://dev.mysql.com/doc/refman/8.0/en/datetime.html
-func DecodeDatetime(v uint64) string {
+func DecodeDatetime(v uint64) time.Time {
 	d := v / 1000000
 	t := v % 1000000
-	return FracTime{Time: time.Date(int(d/10000),
+	return time.Date(int(d/10000),
 		time.Month((d%10000)/100),
 		int(d%100),
 		int(t/10000),
@@ -140,13 +147,13 @@ func DecodeDatetime(v uint64) string {
 		int(t%100),
 		0,
 		Timezone,
-	)}.String()
+	)
 }
 
 // DecodeDatetime2 decodes DATETIME v2 value.
 // Spec: https://dev.mysql.com/doc/refman/8.0/en/datetime.html
 // Implementation borrowed from https://github.com/siddontang/go-mysql/
-func DecodeDatetime2(data []byte, dec uint16) (string, int) {
+func DecodeDatetime2(data []byte, dec uint16) (time.Time, int) {
 	const offset int64 = 0x8000000000
 	// get datetime binary length
 	n := int(5 + (dec+1)/2)
@@ -164,7 +171,7 @@ func DecodeDatetime2(data []byte, dec uint16) (string, int) {
 	}
 
 	if intPart == 0 {
-		return formatZeroTime(int(frac), int(dec)), n
+		return time.Time{}, n
 	}
 
 	tmp := intPart<<24 + frac
@@ -188,41 +195,5 @@ func DecodeDatetime2(data []byte, dec uint16) (string, int) {
 	minute := int((hms >> 6) % (1 << 6))
 	hour := int((hms >> 12))
 
-	return FracTime{time.Date(year, time.Month(month), day, hour, minute, second, int(frac*1000), Timezone), int(dec)}.String(), n
-}
-
-var (
-	fracTimeFormat = [...]string{
-		"2006-01-02T15:04:05Z",
-		"2006-01-02T15:04:05.0Z",
-		"2006-01-02T15:04:05.00Z",
-		"2006-01-02T15:04:05.000Z",
-		"2006-01-02T15:04:05.0000Z",
-		"2006-01-02T15:04:05.00000Z",
-		"2006-01-02T15:04:05.000000Z",
-	}
-	zeroTimes = [...]string{
-		"0000-00-00T00:00:00Z",
-		"0000-00-00T00:00:00.0Z",
-		"0000-00-00T00:00:00.00Z",
-		"0000-00-00T00:00:00.000Z",
-		"0000-00-00T00:00:00.0000Z",
-		"0000-00-00T00:00:00.00000Z",
-		"0000-00-00T00:00:00.000000Z",
-	}
-)
-
-// FracTime is a help structure wrapping Golang Time.
-type FracTime struct {
-	time.Time
-	Dec int
-}
-
-func (t FracTime) String() string {
-	return t.Format(fracTimeFormat[t.Dec])
-}
-
-func formatZeroTime(frac int, dec int) string {
-	// We are going to ignore frac/dec distinction here
-	return zeroTimes[dec]
+	return time.Date(year, time.Month(month), day, hour, minute, second, int(frac*1000), Timezone), n
 }

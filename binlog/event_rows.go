@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"runtime/debug"
-	"time"
 
 	"github.com/localhots/bocadillo/mysql"
 	"github.com/localhots/bocadillo/tools"
@@ -191,8 +190,9 @@ func (e *RowsEvent) decodeValue(buf *tools.Buffer, ct mysql.ColumnType, meta uin
 		buf.Skip(n)
 		return v
 	case mysql.ColumnTypeTimestamp:
-		ts := buf.ReadUint32()
-		return mysql.FracTime{Time: time.Unix(int64(ts), 0)}.String()
+		v, n := mysql.DecodeTimestamp(buf.Cur(), meta)
+		buf.Skip(n)
+		return v
 	case mysql.ColumnTypeTimestamp2:
 		v, n := mysql.DecodeTimestamp2(buf.Cur(), meta)
 		buf.Skip(n)
