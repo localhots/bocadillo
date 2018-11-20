@@ -3,7 +3,6 @@ package slave
 import (
 	"context"
 	"fmt"
-	"io"
 	"os"
 
 	"github.com/localhots/bocadillo/buffer"
@@ -137,11 +136,4 @@ func (c *Conn) runCmd(data []byte) error {
 		return err
 	}
 	return c.conn.ReadResultOK()
-}
-
-func notEOF(err error) error {
-	if err == io.EOF {
-		return nil
-	}
-	return err
 }
