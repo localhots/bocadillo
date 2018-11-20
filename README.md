@@ -38,7 +38,7 @@ for {
 This package is a work in progress and can't be considered production ready just
 yet.
 
-A fork of [go-sql-driver/mysql](https://github.com/localhots/mysql) is used
+A fork of [go-sql-driver/mysql](https://github.com/go-sql-driver/mysql) is used
 to provide underlying connection and basic packet exchange.
 
 ### Licence

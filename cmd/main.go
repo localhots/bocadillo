@@ -11,9 +11,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/juju/errors"
+	"github.com/localhots/bocadillo/mysql/slave"
 	"github.com/localhots/bocadillo/reader"
-	"github.com/localhots/bocadillo/reader/slave"
-	"github.com/pkg/errors"
 )
 
 func main() {

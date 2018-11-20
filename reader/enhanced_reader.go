@@ -9,8 +9,8 @@ import (
 	"github.com/juju/errors"
 	"github.com/localhots/bocadillo/binlog"
 	"github.com/localhots/bocadillo/mysql"
+	"github.com/localhots/bocadillo/mysql/slave"
 	"github.com/localhots/bocadillo/reader/schema"
-	"github.com/localhots/bocadillo/reader/slave"
 )
 
 // EnhancedReader is an extended version of the reader that maintains schema

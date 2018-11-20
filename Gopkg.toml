@@ -6,10 +6,6 @@
   branch = "master"
   name = "github.com/juju/errors"
 
-[[constraint]]
-  branch = "bocadillo"
-  name = "github.com/localhots/mysql"
-
 [prune]
   go-tests = true
   unused-packages = true

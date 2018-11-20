@@ -2,18 +2,17 @@ package slave
 
 import (
 	"context"
-	"database/sql/driver"
 	"fmt"
 	"io"
 	"os"
 
+	"github.com/localhots/bocadillo/mysql/driver"
 	"github.com/localhots/bocadillo/tools"
-	"github.com/localhots/mysql"
 )
 
 // Conn is a slave connection used to issue a binlog dump command.
 type Conn struct {
-	conn *mysql.ExtendedConn
+	conn *driver.ExtendedConn
 	conf Config
 }
 
@@ -51,17 +50,12 @@ func Connect(dsn string, conf Config) (*Conn, error) {
 		conf.Offset = 4
 	}
 
-	conn, err := (&mysql.MySQLDriver{}).Open(dsn)
+	conn, err := driver.NewExtendedConnection(dsn)
 	if err != nil {
 		return nil, err
 	}
 
-	extconn, err := mysql.ExtendConn(conn)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Conn{conn: extconn, conf: conf}, nil
+	return &Conn{conn: conn, conf: conf}, nil
 }
 
 // ReadPacket reads next packet from the server and processes the first status
@@ -123,37 +117,13 @@ func (c *Conn) StartBinlogDump() error {
 
 // DisableChecksum disables CRC32 checksums for this connection.
 func (c *Conn) DisableChecksum() error {
-	cs, err := c.GetVar("BINLOG_CHECKSUM")
-	if err != nil {
-		return err
-	}
-
-	if cs != "NONE" {
-		return c.SetVar("@master_binlog_checksum", "NONE")
-	}
-	return nil
-}
-
-// GetVar fetches value of the given variable.
-func (c *Conn) GetVar(name string) (string, error) {
-	rows, err := c.conn.Query(fmt.Sprintf("SHOW VARIABLES LIKE %q", name), []driver.Value{})
-	if err != nil {
-		return "", notEOF(err)
-	}
-	defer rows.Close()
-
-	res := make([]driver.Value, len(rows.Columns()))
-	err = rows.Next(res)
-	if err != nil {
-		return "", notEOF(err)
-	}
-
-	return string(res[1].([]byte)), nil
+	return c.SetVar("@master_binlog_checksum", "NONE")
 }
 
 // SetVar assigns a new value to the given variable.
 func (c *Conn) SetVar(name, val string) error {
-	return c.conn.Exec(fmt.Sprintf("SET %s=%q", name, val))
+	_, err := c.conn.Exec(fmt.Sprintf("SET %s=%q", name, val), nil)
+	return err
 }
 
 // Close the connection.

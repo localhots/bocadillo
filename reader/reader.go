@@ -5,7 +5,7 @@ import (
 
 	"github.com/juju/errors"
 	"github.com/localhots/bocadillo/binlog"
-	"github.com/localhots/bocadillo/reader/slave"
+	"github.com/localhots/bocadillo/mysql/slave"
 )
 
 // Reader is a binary log reader.

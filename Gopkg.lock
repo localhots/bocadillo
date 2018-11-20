@@ -25,12 +25,6 @@
   revision = "a4583d0a56eac4bdd939e38050d0c69abe0a9b41"
 
 [[projects]]
-  branch = "bocadillo"
-  name = "github.com/localhots/mysql"
-  packages = ["."]
-  revision = "c2889dfb94f790a6007c23ced2fa3a457d7d9ab0"
-
-[[projects]]
   name = "google.golang.org/appengine"
   packages = ["cloudsql"]
   revision = "4a4468ece617fc8205e99368fa2200e9d1fad421"
@@ -39,6 +33,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9a8c3bd1e90edfe636f6978d9d033603c7ffcc253dba8cd8f058c563b7848833"
+  inputs-digest = "42bc65f49e64cf440ca3379b58b767424c2715b02b5f2f51fb783d84e3bc7283"
   solver-name = "gps-cdcl"
   solver-version = 1
