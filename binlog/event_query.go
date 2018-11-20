@@ -1,7 +1,7 @@
 package binlog
 
 import (
-	"github.com/localhots/bocadillo/tools"
+	"github.com/localhots/bocadillo/buffer"
 )
 
 // QueryEvent contains query details.
@@ -17,7 +17,7 @@ type QueryEvent struct {
 // Decode given buffer into a qeury event.
 // Spec: https://dev.mysql.com/doc/internals/en/query-event.html
 func (e *QueryEvent) Decode(connBuff []byte) {
-	buf := tools.NewBuffer(connBuff)
+	buf := buffer.New(connBuff)
 
 	e.SlaveProxyID = buf.ReadUint32()
 	e.ExecutionTime = buf.ReadUint32()

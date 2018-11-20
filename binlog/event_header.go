@@ -3,7 +3,7 @@ package binlog
 import (
 	"errors"
 
-	"github.com/localhots/bocadillo/tools"
+	"github.com/localhots/bocadillo/buffer"
 )
 
 var (
@@ -30,7 +30,7 @@ func (h *EventHeader) Decode(connBuff []byte, fd FormatDescription) error {
 		return ErrInvalidHeader
 	}
 
-	buf := tools.NewBuffer(connBuff)
+	buf := buffer.New(connBuff)
 	h.Timestamp = buf.ReadUint32()
 	h.Type = EventType(buf.ReadUint8())
 	h.ServerID = buf.ReadUint32()

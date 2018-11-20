@@ -6,8 +6,8 @@ import (
 	"io"
 	"os"
 
+	"github.com/localhots/bocadillo/buffer"
 	"github.com/localhots/bocadillo/mysql/driver"
-	"github.com/localhots/bocadillo/tools"
 )
 
 // Conn is a slave connection used to issue a binlog dump command.
@@ -83,7 +83,7 @@ func (c *Conn) ReadPacket(ctx context.Context) ([]byte, error) {
 func (c *Conn) RegisterSlave() error {
 	c.conn.ResetSequence()
 
-	buf := tools.NewCommandBuffer(1 + 4 + 1 + len(c.conf.Hostname) + 1 + 1 + 2 + 4 + 4)
+	buf := buffer.NewCommandBuffer(1 + 4 + 1 + len(c.conf.Hostname) + 1 + 1 + 2 + 4 + 4)
 	buf.WriteByte(comRegisterSlave)
 	buf.WriteUint32(c.conf.ServerID)
 	buf.WriteStringLenEnc(c.conf.Hostname)
@@ -105,7 +105,7 @@ func (c *Conn) RegisterSlave() error {
 func (c *Conn) StartBinlogDump() error {
 	c.conn.ResetSequence()
 
-	buf := tools.NewCommandBuffer(1 + 4 + 2 + 4 + len(c.conf.File))
+	buf := buffer.NewCommandBuffer(1 + 4 + 2 + 4 + len(c.conf.File))
 	buf.WriteByte(comBinlogDump)
 	buf.WriteUint32(uint32(c.conf.Offset))
 	buf.Skip(2) // Flags

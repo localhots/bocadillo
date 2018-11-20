@@ -1,8 +1,8 @@
 package binlog
 
 import (
+	"github.com/localhots/bocadillo/buffer"
 	"github.com/localhots/bocadillo/mysql"
-	"github.com/localhots/bocadillo/tools"
 )
 
 // TableDescription contains table details required to process rows events.
@@ -26,7 +26,7 @@ type TableMapEvent struct {
 // Decode decodes given buffer into a table map event.
 // Spec: https://dev.mysql.com/doc/internals/en/table-map-event.html
 func (e *TableMapEvent) Decode(connBuff []byte, fd FormatDescription) error {
-	buf := tools.NewBuffer(connBuff)
+	buf := buffer.New(connBuff)
 	idSize := fd.TableIDSize(EventTypeTableMap)
 	if idSize == 6 {
 		e.TableID = buf.ReadUint48()

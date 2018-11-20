@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/localhots/bocadillo/tools"
+	"github.com/localhots/bocadillo/buffer"
 )
 
 // FormatDescription is a description of binary log format.
@@ -52,7 +52,7 @@ const (
 // Decode decodes given buffer into a format description event.
 // Spec: https://dev.mysql.com/doc/internals/en/format-description-event.html
 func (e *FormatDescriptionEvent) Decode(data []byte) error {
-	buf := tools.NewBuffer(data)
+	buf := buffer.New(data)
 	e.Version = buf.ReadUint16()
 	e.ServerVersion = trimStringEOF(buf.ReadStringVarLen(50))
 	e.CreateTimestamp = buf.ReadUint32()

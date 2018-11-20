@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"runtime/debug"
 
+	"github.com/localhots/bocadillo/buffer"
 	"github.com/localhots/bocadillo/mysql"
-	"github.com/localhots/bocadillo/tools"
 )
 
 // RowsEvent contains a Rows Event.
@@ -58,7 +58,7 @@ func (e *RowsEvent) Decode(connBuff []byte, fd FormatDescription, td TableDescri
 		}
 	}()
 
-	buf := tools.NewBuffer(connBuff)
+	buf := buffer.New(connBuff)
 	idSize := fd.TableIDSize(e.Type)
 	if idSize == 6 {
 		e.TableID = buf.ReadUint48()
@@ -103,7 +103,7 @@ func (e *RowsEvent) Decode(connBuff []byte, fd FormatDescription, td TableDescri
 	return nil
 }
 
-func (e *RowsEvent) decodeRows(buf *tools.Buffer, td TableDescription, bm []byte) ([]interface{}, error) {
+func (e *RowsEvent) decodeRows(buf *buffer.Buffer, td TableDescription, bm []byte) ([]interface{}, error) {
 	count := 0
 	for i := 0; i < int(e.ColumnCount); i++ {
 		if isBitSet(bm, i) {
@@ -132,7 +132,7 @@ func (e *RowsEvent) decodeRows(buf *tools.Buffer, td TableDescription, bm []byte
 	return row, nil
 }
 
-func (e *RowsEvent) decodeValue(buf *tools.Buffer, ct mysql.ColumnType, meta uint16) interface{} {
+func (e *RowsEvent) decodeValue(buf *buffer.Buffer, ct mysql.ColumnType, meta uint16) interface{} {
 	var length int
 	if ct == mysql.ColumnTypeString {
 		if meta > 0xFF {
@@ -251,7 +251,7 @@ func (e *RowsEvent) decodeValue(buf *tools.Buffer, ct mysql.ColumnType, meta uin
 	}
 }
 
-func readString(buf *tools.Buffer, length int) string {
+func readString(buf *buffer.Buffer, length int) string {
 	// Length is encoded in 1 byte
 	if length < 256 {
 		return string(buf.ReadStringVarEnc(1))

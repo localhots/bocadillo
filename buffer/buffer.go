@@ -1,4 +1,4 @@
-package tools
+package buffer
 
 import (
 	"encoding/binary"
@@ -13,9 +13,9 @@ type Buffer struct {
 	pos  int
 }
 
-// NewBuffer creates a new buffer from a given slice of bytes and sets the
-// cursor to the beginning.
-func NewBuffer(data []byte) *Buffer {
+// New creates a new buffer from a given slice of bytes and sets the cursor to
+// the beginning.
+func New(data []byte) *Buffer {
 	return &Buffer{data: data}
 }
 

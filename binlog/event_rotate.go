@@ -1,6 +1,6 @@
 package binlog
 
-import "github.com/localhots/bocadillo/tools"
+import "github.com/localhots/bocadillo/buffer"
 
 // Position is a pair of log file name and a binary offset in it that is used to
 // represent the beginning of the event description.
@@ -18,7 +18,7 @@ type RotateEvent struct {
 // Decode decodes given buffer into a rotate event.
 // Spec: https://dev.mysql.com/doc/internals/en/rotate-event.html
 func (e *RotateEvent) Decode(connBuff []byte, fd FormatDescription) error {
-	buf := tools.NewBuffer(connBuff)
+	buf := buffer.New(connBuff)
 	if fd.Version > 1 {
 		e.NextFile.Offset = buf.ReadUint64()
 	} else {
