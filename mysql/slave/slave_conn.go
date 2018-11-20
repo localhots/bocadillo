@@ -121,8 +121,7 @@ func (c *Conn) DisableChecksum() error {
 
 // SetVar assigns a new value to the given variable.
 func (c *Conn) SetVar(name, val string) error {
-	_, err := c.conn.Exec(fmt.Sprintf("SET %s=%q", name, val), nil)
-	return err
+	return c.conn.Exec(fmt.Sprintf("SET %s=%q", name, val))
 }
 
 // Close the connection.

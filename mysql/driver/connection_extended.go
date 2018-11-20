@@ -5,6 +5,11 @@ import (
 	"time"
 )
 
+// ExtendedConn provides access to internal packet functions.
+type ExtendedConn struct {
+	*mysqlConn
+}
+
 // NewExtendedConnection creates a new connection extended with packet access
 // methods.
 func NewExtendedConnection(dsn string) (*ExtendedConn, error) {
@@ -15,17 +20,9 @@ func NewExtendedConnection(dsn string) (*ExtendedConn, error) {
 	return &ExtendedConn{conn}, nil
 }
 
-// ExtendedConn provides access to internal packet functions.
-type ExtendedConn struct {
-	*mysqlConn
-}
-
-// Close the connection.
-func (c *ExtendedConn) Close() error {
-	// Reset buffer length parameter
-	// If it's not zero bad stuff happens
-	c.buf.length = 0
-	return c.mysqlConn.Close()
+// Exec executes a query.
+func (c *ExtendedConn) Exec(query string) error {
+	return c.exec(query)
 }
 
 // ReadPacket reads a packet from a given connection. If given context has a
@@ -64,4 +61,12 @@ func (c *ExtendedConn) HandleErrorPacket(data []byte) error {
 // ResetSequence resets command sequence counter.
 func (c *ExtendedConn) ResetSequence() {
 	c.sequence = 0
+}
+
+// Close the connection.
+func (c *ExtendedConn) Close() error {
+	// Reset buffer length parameter
+	// If it's not zero bad stuff happens
+	c.buf.length = 0
+	return c.mysqlConn.Close()
 }
