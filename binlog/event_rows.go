@@ -174,9 +174,7 @@ func (e *RowsEvent) decodeValue(buf *buffer.Buffer, ct mysql.ColumnType, meta ui
 	case mysql.ColumnTypeNewDecimal:
 		precision := int(meta >> 8)
 		decimals := int(meta & 0xFF)
-		dec, n := mysql.DecodeDecimal(buf.Cur(), precision, decimals)
-		buf.Skip(n)
-		return dec
+		return buf.ReadDecimal(precision, decimals)
 
 	// Date and Time
 	case mysql.ColumnTypeYear:

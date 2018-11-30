@@ -170,3 +170,15 @@ func (b *Buffer) WriteStringLenEnc(s string) {
 func (b *Buffer) WriteStringEOF(s string) {
 	b.pos += copy(b.data[b.pos:], s)
 }
+
+//
+// Special types
+//
+
+// ReadDecimal decodes a decimal value from the buffer anf then advances cursor
+// accordingly.
+func (b *Buffer) ReadDecimal(precision, decimals int) mysql.Decimal {
+	dec, n := mysql.DecodeDecimal(b.Cur(), precision, decimals)
+	b.Skip(n)
+	return dec
+}
