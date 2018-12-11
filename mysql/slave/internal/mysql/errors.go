@@ -6,7 +6,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at http://mozilla.org/MPL/2.0/.
 
-package driver
+package mysql
 
 import (
 	"errors"
@@ -22,7 +22,7 @@ var (
 	ErrMalformPkt        = errors.New("malformed packet")
 	ErrNoTLS             = errors.New("TLS requested but server does not support TLS")
 	ErrCleartextPassword = errors.New("this user requires clear text authentication. If you still want to use it, please add 'allowCleartextPasswords=1' to your DSN")
-	ErrNativePassword    = errors.New("this user requires mysql native password authentication")
+	ErrNativePassword    = errors.New("this user requires mysql native password authentication.")
 	ErrOldPassword       = errors.New("this user requires old password authentication. If you still want to use it, please add 'allowOldPasswords=1' to your DSN. See also https://github.com/go-sql-driver/mysql/wiki/old_passwords")
 	ErrUnknownPlugin     = errors.New("this authentication plugin is not supported")
 	ErrOldProtocol       = errors.New("MySQL server does not support required protocol 41+")
@@ -55,14 +55,14 @@ func SetLogger(logger Logger) error {
 	return nil
 }
 
-// Error is an error type which represents a single MySQL error
-type Error struct {
+// MySQLError is an error type which represents a single MySQL error
+type MySQLError struct {
 	Number  uint16
 	Message string
 }
 
-func (e *Error) Error() string {
-	return fmt.Sprintf("Error %d: %s", e.Number, e.Message)
+func (me *MySQLError) Error() string {
+	return fmt.Sprintf("Error %d: %s", me.Number, me.Message)
 }
 
 func timeoutError(err error) bool {

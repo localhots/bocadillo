@@ -6,12 +6,12 @@ import (
 	"os"
 
 	"github.com/localhots/bocadillo/buffer"
-	"github.com/localhots/bocadillo/mysql/driver"
+	"github.com/localhots/bocadillo/mysql/slave/internal/mysql"
 )
 
 // Conn is a slave connection used to issue a binlog dump command.
 type Conn struct {
-	conn *driver.ExtendedConn
+	conn *mysql.ExtendedConn
 	conf Config
 }
 
@@ -49,12 +49,17 @@ func Connect(dsn string, conf Config) (*Conn, error) {
 		conf.Offset = 4
 	}
 
-	conn, err := driver.NewExtendedConnection(dsn)
+	conn, err := (mysql.MySQLDriver{}).Open(dsn)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Conn{conn: conn, conf: conf}, nil
+	extconn, err := mysql.ExtendConn(conn)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Conn{conn: extconn, conf: conf}, nil
 }
 
 // ReadPacket reads next packet from the server and processes the first status

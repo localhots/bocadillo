@@ -6,15 +6,15 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at http://mozilla.org/MPL/2.0/.
 
-package driver
+package mysql
 
 type mysqlResult struct {
 	affectedRows int64
-	insertID     int64
+	insertId     int64
 }
 
 func (res *mysqlResult) LastInsertId() (int64, error) {
-	return res.insertID, nil
+	return res.insertId, nil
 }
 
 func (res *mysqlResult) RowsAffected() (int64, error) {
