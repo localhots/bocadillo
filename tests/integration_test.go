@@ -10,7 +10,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 
 	"github.com/localhots/bocadillo/binlog"
-	"github.com/localhots/bocadillo/mysql/slave"
+	"github.com/localhots/bocadillo/mysql/driver"
 	"github.com/localhots/bocadillo/reader"
 )
 
@@ -46,7 +46,7 @@ func TestMain(m *testing.M) {
 	os.Exit(exitCode)
 }
 
-func getConfig() (dsn string, conf slave.Config) {
+func getConfig() (dsn string, conf driver.Config) {
 	envOrDefault := func(name, def string) string {
 		if val := os.Getenv(name); val != "" {
 			return val

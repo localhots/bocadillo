@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/juju/errors"
-	"github.com/localhots/bocadillo/mysql/slave"
+	"github.com/localhots/bocadillo/mysql/driver"
 	"github.com/localhots/bocadillo/reader"
 )
 
@@ -27,7 +27,7 @@ func main() {
 	validate((*id != 0), "Server ID is not set")
 	validate((*file != ""), "Binary log file is not set")
 
-	reader, err := reader.New(*dsn, slave.Config{
+	reader, err := reader.New(*dsn, driver.Config{
 		ServerID: uint32(*id),
 		File:     *file,
 		Offset:   uint32(*offset),

@@ -9,7 +9,7 @@ import (
 	"github.com/juju/errors"
 	"github.com/localhots/bocadillo/binlog"
 	"github.com/localhots/bocadillo/mysql"
-	"github.com/localhots/bocadillo/mysql/slave"
+	"github.com/localhots/bocadillo/mysql/driver"
 	"github.com/localhots/bocadillo/reader/schema"
 )
 
@@ -29,7 +29,7 @@ type EnhancedRowsEvent struct {
 }
 
 // NewEnhanced creates a new enhanced binary log reader.
-func NewEnhanced(dsn string, sc slave.Config) (*EnhancedReader, error) {
+func NewEnhanced(dsn string, sc driver.Config) (*EnhancedReader, error) {
 	r, err := New(dsn, sc)
 	if err != nil {
 		return nil, err

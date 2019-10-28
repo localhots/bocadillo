@@ -1,4 +1,4 @@
-package slave
+package driver
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/localhots/bocadillo/buffer"
-	"github.com/localhots/bocadillo/mysql/slave/internal/mysql"
+	"github.com/localhots/bocadillo/mysql/driver/internal/mysql"
 )
 
 // Conn is a slave connection used to issue a binlog dump command.

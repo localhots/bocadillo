@@ -5,12 +5,12 @@ import (
 
 	"github.com/juju/errors"
 	"github.com/localhots/bocadillo/binlog"
-	"github.com/localhots/bocadillo/mysql/slave"
+	"github.com/localhots/bocadillo/mysql/driver"
 )
 
 // Reader is a binary log reader.
 type Reader struct {
-	conn     *slave.Conn
+	conn     *driver.Conn
 	state    binlog.Position
 	format   binlog.FormatDescription
 	tableMap map[uint64]binlog.TableDescription
@@ -34,8 +34,8 @@ var (
 )
 
 // New creates a new binary log reader.
-func New(dsn string, sc slave.Config) (*Reader, error) {
-	conn, err := slave.Connect(dsn, sc)
+func New(dsn string, sc driver.Config) (*Reader, error) {
+	conn, err := driver.Connect(dsn, sc)
 	if err != nil {
 		return nil, errors.Annotate(err, "establish slave connection")
 	}
