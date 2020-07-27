@@ -36,7 +36,7 @@ func (c *ExtendedConn) Exec(query string) error {
 	return c.exec(query)
 }
 
-// ReadPacket reads a packet from a given connection.
+// ReadPacket reads a packet from the connection.
 func (c *ExtendedConn) ReadPacket(ctx context.Context) ([]byte, error) {
 	if dl, ok := ctx.Deadline(); ok {
 		dur := dl.Sub(time.Now())
@@ -51,7 +51,7 @@ func (c *ExtendedConn) ReadPacket(ctx context.Context) ([]byte, error) {
 	return c.readPacket()
 }
 
-// WritePacket writes a packet to a given connection.
+// WritePacket writes a packet to the connection.
 func (c *ExtendedConn) WritePacket(p []byte) error {
 	return c.writePacket(p)
 }

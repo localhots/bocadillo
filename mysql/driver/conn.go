@@ -9,18 +9,24 @@ import (
 	"github.com/localhots/bocadillo/mysql/driver/internal/mysql"
 )
 
-// Conn is a slave connection used to issue a binlog dump command.
+// Conn is a connection used to issue a binlog dump command.
 type Conn struct {
 	conn *mysql.ExtendedConn
 	conf Config
 }
 
-// Config contains slave connection configuration. It is passed to master upon
-// registration.
+// Config contains all the details necessary to establish a replica connection.
 type Config struct {
+	// File and offset describe current state.
+	// File is the name of the binary log file.
+	File string
+	// Offset is the binary offset of the first event in the binary log file,
+	// a starting point at which processing should begin.
+	Offset uint32
+	// ServerID should be a unique replica server identifier (i guess).
 	ServerID uint32
-	File     string
-	Offset   uint32
+	// Hostname along with server ID is used to identify the replica server
+	// connection.
 	Hostname string
 }
 
@@ -29,13 +35,16 @@ const (
 	comRegisterSlave byte = 21
 	comBinlogDump    byte = 18
 
-	// Bytes
+	// Result codes
 	resultOK  byte = 0x00
 	resultEOF byte = 0xFE
 	resultERR byte = 0xFF
 )
 
-// Connect esablishes a new slave connection.
+// Connect esablishes a new database connection. It is a go-sql-driver
+// connection with a few low level functions exposed and with a high level
+// wrapper that allows to execute just a few commands that are required for
+// operation.
 func Connect(dsn string, conf Config) (*Conn, error) {
 	if conf.Hostname == "" {
 		name, err := os.Hostname()
@@ -62,8 +71,7 @@ func Connect(dsn string, conf Config) (*Conn, error) {
 	return &Conn{conn: extconn, conf: conf}, nil
 }
 
-// ReadPacket reads next packet from the server and processes the first status
-// byte.
+// ReadPacket reads next packet from the server and peeks at the status byte.
 func (c *Conn) ReadPacket(ctx context.Context) ([]byte, error) {
 	data, err := c.conn.ReadPacket(ctx)
 	if err != nil {

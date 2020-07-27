@@ -50,9 +50,9 @@ just like feature contributions.
 
 Modified copy of [go-sql-driver/mysql](https://github.com/go-sql-driver/mysql)
 is included with this project. It was changed in order to expose certain low
-level functions that are used to establish a slave connection and to remove
-automatic driver registration because it will likely conflict with the original
-code when imported as a dependency.
+level functions that allow to establish a connection manually and register as a
+replica server and to remove automatic driver registration because it will
+likely conflict with the original code when imported as a dependency.
 
 ### Licence
 

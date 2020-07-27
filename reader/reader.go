@@ -37,7 +37,7 @@ var (
 func New(dsn string, sc driver.Config) (*Reader, error) {
 	conn, err := driver.Connect(dsn, sc)
 	if err != nil {
-		return nil, errors.Annotate(err, "establish slave connection")
+		return nil, errors.Annotate(err, "establish connection")
 	}
 
 	r := &Reader{
@@ -53,7 +53,7 @@ func New(dsn string, sc driver.Config) (*Reader, error) {
 		return nil, errors.Annotate(err, "disable binlog checksum")
 	}
 	if err := conn.RegisterSlave(); err != nil {
-		return nil, errors.Annotate(err, "register slave server")
+		return nil, errors.Annotate(err, "register replica server")
 	}
 	if err := conn.StartBinlogDump(); err != nil {
 		return nil, errors.Annotate(err, "start binlog dump")

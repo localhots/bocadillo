@@ -5,3 +5,5 @@ require (
 	github.com/google/go-cmp v0.3.1
 	github.com/juju/errors v0.0.0-20190930114154-d42613fe1ab9
 )
+
+go 1.13
