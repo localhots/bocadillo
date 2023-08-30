@@ -33,7 +33,7 @@ func (m *Manager) Manage(database, table string) error {
 
 // ProcessQuery accepts an SQL query and updates schema if required.
 func (m *Manager) ProcessQuery(database, query string) error {
-	if tableName, ok := changedTable(query); !ok {
+	if tableName, ok := changedTable(query); ok {
 		if tbl := m.Schema.Table(database, tableName); tbl != nil {
 			return m.Manage(database, tableName)
 		}
